@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.member.PopularMemberDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberColumns">
+
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 인기 유저 리스트 -->
+    <select id="getPopularMemberList" parameterType="SearchDto" resultType="MemberInfoDto">
+        SELECT
+            `snmepo`.`member_uuid` AS `uuid`,
+            ${memberBadge}
+        FROM <include refid="database" />`sns_member_popular` as `snmepo`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `snmepo`.`member_uuid`
+        <if test="loginMemberUuid != null and loginMemberUuid !=''">
+        LEFT JOIN <include refid="database" />`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snmepo`.`member_uuid`
+            AND `snmefo`.`state` = 1
+            AND `snmefo`.`member_uuid` = #{loginMemberUuid}
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snmepo`.`member_uuid`
+            AND `snmebl`.`state` = 1
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmepo`.`member_uuid`
+            AND `snmebl2`.`state` = 1
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+        WHERE
+                `snmebl`.`idx`  IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            AND `snmefo`.`idx`  IS NULL
+            AND `snmepo`.`member_uuid` != #{loginMemberUuid}
+        </if>
+        LIMIT 100
+    </select>
+
+    <!-- 인기 유저의 게시물 리스트 -->
+    <select id="getPopularMemberContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx`,
+            `snco`.`image_cnt`,
+            IF(`sncoim`.`url` = '','',CONCAT(#{imgDomain}, `sncoim`.`url`)) AS `imgUrl`,
+            `snco`.`reg_date`
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        INNER JOIN <include refid="database" />`sns_contents_img` AS `sncoim`
+            ON `snco`.`idx` = `sncoim`.`contents_idx`
+            AND `sncoim`.`state` = 1
+            AND `sncoim`.`sort` = 1
+        LEFT JOIN <include refid="database" />`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`state` = 1
+            AND `sncore`.`member_uuid` = #{loginMemberUuid}
+        LEFT JOIN <include refid="database" />`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.`contents_idx` = `snco`.`idx`
+            AND `sncohi`.state = 1
+            AND `sncohi`.`member_uuid` = #{loginMemberUuid}
+        LEFT JOIN <include refid="database" />`sns_contents_img_restrain` AS `sncoimre`
+            ON `sncoimre`.`img_idx` = `sncoim`.`idx`
+        WHERE
+                `snco`.`member_uuid` = #{memberUuid}
+            AND `sncoimre`.`idx` IS NULL
+            AND `sncore`.`idx` IS NULL
+            AND `sncohi`.`idx` IS NULL
+            AND `snco`.`state` = 1
+            AND `snco`.`is_keep` = 0
+            AND `snco`.`is_view` = 1
+        ORDER BY  `snco`.`reg_date` DESC
+        LIMIT 3
+    </select>
+
+</mapper>

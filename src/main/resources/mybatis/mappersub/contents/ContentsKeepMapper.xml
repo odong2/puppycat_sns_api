@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.contents.ContentsKeepDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 내가 보관한 콘텐츠 카운트 가져오기 -->
+    <select id="iGetTotalMyKeepContentsCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`)
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+                `snco`.`member_uuid` = #{loginMemberUuid}
+            AND `snco`.`state`      = 1
+            AND `snco`.`is_keep`    = 1
+    </select>
+
+    <!-- 내가 보관 한 콘텐츠 리스트 가져오기 -->
+    <select id="lGetMyKeepContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` AS `idx`,
+            `snco`.`image_cnt`
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+                `snco`.`member_uuid` = #{loginMemberUuid}
+            AND `snco`.`state`      = 1
+            AND `snco`.`is_keep`    = 1
+        ORDER BY  `snco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.contents.ContentsLikeDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <sql id="listTable">
+        INNER JOIN <include refid="database" />`sns_contents` AS `snco`
+            ON `snco`.`idx` = `sncoli`.`contents_idx`
+            AND `snco`.`state` = 1
+            AND `snco`.`is_keep` = 0
+        LEFT JOIN <include refid="database" />`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `sncoli`.`contents_idx`
+            AND `sncore`.`member_uuid` = `sncoli`.`member_uuid`
+            AND `sncore`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snco`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.member_uuid = `sncoli`.`member_uuid`
+            AND `sncohi`.`contents_idx` = `sncoli`.`contents_idx`
+            AND `sncohi`.state = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snco`.`member_uuid`
+            AND snmefo.`member_uuid` = #{loginMemberUuid}
+            AND snmefo.state = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmefo2`.`follow_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.state = 1
+    </sql>
+
+    <!-- 검색 조건 -->
+    <sql id="likeSearch">
+        <where>
+                `sncoli`.`contents_idx` = #{contentsIdx}
+            AND `sncoli`.`state`        = 1
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 전체 카운트 가져오기 -->
+    <select id="iGetTotalLikeCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`sncoli`.`idx`)
+        FROM
+            <include refid="database" />`sns_contents_like` AS `sncoli`
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `sncoli`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `sncoli`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{memberUuid}
+            AND `snmebl2`.`state` = 1
+        <include refid="likeSearch"/>
+    </select>
+
+    <!-- 컨텐츠 좋아요 체크 -->
+    <select id="getContentsLikeCheck" parameterType="ContentsLikeDto" resultType="int">
+        SELECT
+            COUNT(`sncoli`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_contents_like` AS `sncoli`
+        WHERE
+               `sncoli`.`member_uuid` = #{memberUuid}
+            AND `sncoli`.`contents_idx` = #{contentsIdx}
+            AND `sncoli`.`state` <![CDATA[ = ]]> 1
+    </select>
+
+    <!-- 좋아요한 회원 리스트 가져오기 -->
+    <select id="lGetContentsLikeList" parameterType="SearchDto" resultType="MemberInfoDto">
+        SELECT
+            `sncoli`.`member_uuid` AS `uuid`,
+            (CASE WHEN `snmefo`.`follow_uuid` = `sncoli`.`member_uuid` THEN 1 ELSE 0 END) AS `followState`,
+            ${memberBadge}
+        FROM
+            <include refid="database" />`sns_contents_like` AS `sncoli`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoli`.`member_uuid`
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `sncoli`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `sncoli`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{memberUuid}
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `sncoli`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = 1
+        <include refid="likeSearch"/>
+        ORDER BY  `sncoli`.`reg_date` DESC
+        <if test="pagination != null">
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 내가 좋아요한 컨텐츠 카운트 가져오기 -->
+    <select id="iGetTotalMyLikeContentsCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`)
+        FROM (
+            SELECT
+                `snco`.`is_view`,
+                IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`
+            FROM<include refid="database" />`sns_contents_like` AS `sncoli`
+                 <include refid="listTable"/>
+            WHERE
+                    `sncoli`.`member_uuid` = #{loginMemberUuid}
+                AND `sncoli`.`state`      = 1
+                AND `sncohi`.`state` IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state` IS NULL
+            HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 내가 좋아요 한 콘텐츠 리스트 가져오기 -->
+    <select id="lGetMyLikeContentsList" parameterType="SearchDto" resultType="ContentsDto">
+
+        SELECT
+            `sncoli`.`contents_idx` AS `idx`,
+            `snco`.`image_cnt`,
+            `snco`.`is_view`,
+            IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`
+        FROM<include refid="database" />`sns_contents_like` AS `sncoli`
+             <include refid="listTable"/>
+        WHERE
+                `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state`      = 1
+            AND `sncohi`.`state` IS NULL
+            AND `sncore`.`state` IS NULL
+            AND `snmebl`.`state` IS NULL
+            AND `snmebl2`.`state` IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY  `sncoli`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 좋아요 내역 가져오기 -->
+    <select id="oGetTargetInfo" parameterType="ContentsLikeDto" resultType="ContentsLikeDto">
+        SELECT
+            `sncoli`.`idx`,
+            `sncoli`.`state`,
+            `sncoli`.`reg_date`
+        FROM
+            <include refid="database" />`sns_contents_like` AS `sncoli`
+        WHERE
+                `sncoli`.`contents_idx`  = #{contentsIdx}
+            AND `sncoli`.`member_uuid`   = #{loginMemberUuid}
+        LIMIT 1
+    </select>
+
+    <!-- 해당 컨텐츠 cnt 테이블에 값이 있는지 확인 -->
+    <select id="lCheckCntByIdx" parameterType="ContentsLikeDto" resultType="Long">
+        SELECT
+            `sncolicn`.`contents_idx`
+        FROM
+            <include refid="database" />`sns_contents_like_cnt` AS `sncolicn`
+        WHERE
+            `sncolicn`.`contents_idx`  = #{contentsIdx}
+        LIMIT 1
+    </select>
+
+    <!-- 회원의 cnt 체크 -->
+    <select id="lCheckFollowCntByIdx" parameterType="ContentsLikeDto" resultType="_int">
+        SELECT
+            COUNT(`snfocolicn`.`follow_idx`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_follow_contents_like_cnt` AS `snfocolicn`
+        WHERE
+            `snfocolicn`.`follow_idx` = #{followIdx}
+    </select>
+
+</mapper>

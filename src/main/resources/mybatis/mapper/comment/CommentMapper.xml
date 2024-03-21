@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.comment.CommentDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 댓글 등록하기 -->
+    <insert id="insert" parameterType="CommentDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO
+            <include refid="database" />`sns_contents_comment`
+        SET
+            `uuid`            = #{uuid},
+            `contents_idx`    = #{contentsIdx},
+            <choose>
+                <when test="parentIdx != null and parentIdx > 0">
+                    `parent_idx` = #{parentIdx},
+                </when>
+                <otherwise>
+                    `parent_idx` = 0,
+                </otherwise>
+            </choose>
+            `member_uuid`    = #{memberUuid},
+            `contents`       = #{contents},
+            `state`          = 1,
+            `reg_date`       = #{regDate},
+            `reg_date_tz`    = '${convertTZ}'
+    </insert>
+
+    <!-- 댓글cnt 등록하기 -->
+    <insert id="insertCommentCnt" parameterType="CommentDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_contents_comment_cnt`
+        <set>
+            `contents_idx`       = #{contentsIdx}
+            ,`comment_cnt`       =  0
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- cnt +1 -->
+    <update id="updateCommentCntUp" parameterType="CommentDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_comment_cnt`
+        SET
+            `comment_cnt`  = `comment_cnt` + 1
+        WHERE
+            `contents_idx` = #{contentsIdx}
+    </update>
+
+    <!-- cnt -1 -->
+    <update id="updateCommentCntDown" parameterType="CommentDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_comment_cnt`
+        SET
+            `comment_cnt`  = `comment_cnt` - #{affectedRow}
+        WHERE
+            `contents_idx` = #{contentsIdx}
+    </update>
+
+    <!-- 댓글 내용 업데이트 -->
+    <update id="updateCommentContents" parameterType="CommentDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_comment`
+        SET
+            `contents`  = #{contents}
+        WHERE
+            `idx` = #{insertedIdx}
+    </update>
+
+    <!-- 부모 댓글 삭제 -->
+    <update id="removeParentComment" parameterType="CommentDto" keyProperty="affectedRow" >
+        UPDATE
+            <include refid="database" />`sns_contents_comment`
+        SET
+            `state`  = 0
+        WHERE
+            `idx` = #{idx}
+        OR
+            `parent_idx` = #{idx}
+    </update>
+
+    <!-- 자식 댓글 삭제 -->
+    <update id="removeChildComment" parameterType="CommentDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_comment`
+        SET
+            `state`  = 0
+        WHERE
+            `idx` = #{idx}
+        AND
+            `member_uuid` = #{memberUuid}
+    </update>
+
+    <!-- 댓글 수정 -->
+    <update id="modifyComment" parameterType="CommentDto">
+        UPDATE
+            <include refid="database"/>`sns_contents_comment`
+        SET
+            `contents`    = #{contents},
+            `modi_date`   = #{modiDate},
+            `modi_date_tz`= '${convertTZ}'
+        WHERE
+            `idx`         = #{idx}
+        AND `member_uuid` = #{memberUuid}
+        AND `state`       = 1
+    </update>
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+
+</mapper>

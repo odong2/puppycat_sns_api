@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.follow.FollowDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="followColumns">
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 팔로잉 정보 sns_member_follow-->
+    <select id="getFollowSnsInfo" parameterType="SearchDto" resultType="FollowDto">
+        SELECT
+            `snmefo`.`member_uuid`
+            ,`snmefo`.`follow_uuid`
+            ,CONVERT_TZ( `snmefo`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+            <if test="loginMemberUuid != null and loginMemberUuid !=''">
+                , (CASE WHEN `snmefo2`.`follow_uuid` != "" THEN 1 ELSE 0 END) AS `is_follow`
+            </if>
+            ,${memberBadge}
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `snmefocn`.`member_uuid` = `snmefo`.`follow_uuid`
+        <if test="loginMemberUuid != null and loginMemberUuid !=''">
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.follow_uuid = `snmefo`.`follow_uuid`
+            AND `snmefo2`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.block_uuid = `snmefo`.`follow_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.state = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmefo`.`follow_uuid`
+            and `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        </if>
+        <where>
+            AND `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`follow_uuid` = #{followUuid}
+            AND `snmefo`.`state` = '1'
+            <if test="loginMemberUuid != null and loginMemberUuid !=''">
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            </if>
+        </where>
+    </select>
+
+    <!-- 팔로잉 UUID 목록 sns_member_follow-->
+    <select id="getFollowUuidList" parameterType="SearchDto" resultType="String">
+        SELECT
+            `snmefo`.`follow_uuid`
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `snmefocn`.`member_uuid` = `snmefo`.`follow_uuid`
+        <if test="loginMemberUuid != null and loginMemberUuid !=''">
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.follow_uuid = `snmefo`.`follow_uuid`
+            AND `snmefo2`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.block_uuid = `snmefo`.`follow_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.state = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmefo`.`follow_uuid`
+            and `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        </if>
+        <where>
+            AND `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = '1'
+            <if test="loginMemberUuid != null and loginMemberUuid !=''">
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            </if>
+        </where>
+    </select>
+
+    <!-- 팔로워 UUID 목록 sns_member_follow-->
+    <select id="getFollowerUuidList" parameterType="SearchDto" resultType="String">
+        SELECT
+            `snmefo`.`member_uuid` as `follower_uuid`
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `snmefocn`.`member_uuid` = `snmefo`.`member_uuid`
+        <if test="loginMemberUuid != null and loginMemberUuid !=''">
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.follow_uuid = `snmefo`.`member_uuid`
+            AND `snmefo2`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snmefo`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmefo`.`member_uuid`
+            and `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        </if>
+        <where>
+            AND `snmefo`.`follow_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = '1'
+            <if test="loginMemberUuid != null and loginMemberUuid !=''">
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            </if>
+        </where>
+    </select>
+
+    <!-- 팔로워 정보 sns_member_follow-->
+    <select id="getFollowerSnsInfo" parameterType="SearchDto" resultType="FollowDto">
+        SELECT
+            `snmefo`.`follow_uuid` as `member_uuid`
+            ,`snmefo`.`member_uuid` as `follower_uuid`
+            ,CONVERT_TZ( `snmefo`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+            <if test="loginMemberUuid != null and loginMemberUuid !=''">
+            ,(CASE WHEN `snmefo2`.`follow_uuid` != "" THEN 1 ELSE 0 END) AS `is_follow`
+            </if>
+            ,${memberBadge}
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        INNER JOIN <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON  `snmefocn`.`member_uuid` = `snmefo`.`member_uuid`
+        <if test="loginMemberUuid != null and loginMemberUuid !=''">
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.follow_uuid = `snmefo`.`member_uuid`
+            AND `snmefo2`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snmefo`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmefo`.`member_uuid`
+            and `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        </if>
+        <where>
+            AND `snmefo`.`follow_uuid` = #{memberUuid}
+            AND `snmefo`.`member_uuid` = #{followUuid}
+            AND `snmefo`.`state` = '1'
+            <if test="loginMemberUuid != null and loginMemberUuid !=''">
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            </if>
+        </where>
+    </select>
+
+    <!-- 팔로잉 전체 카운트 sns_member_follow_cnt -->
+    <select id="getTotalFollowingCnt" parameterType="String" resultType="_long">
+        SELECT
+            IFNULL(`snmefocn`.`follow_cnt`, 0) AS `follow_cnt`
+        FROM
+            <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+        WHERE
+            `snmefocn`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 팔로잉 중 차단한 카운트 -->
+    <select id="getBlockFollowCnt" parameterType="SearchDto" resultType="_long">
+        SELECT
+            COUNT(`snmefo`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_member_follow` as `snmefo`
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snmefo`.`follow_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN `sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmefo`.`follow_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        WHERE
+                `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`state`=1
+            AND ( `snmebl2`.`idx` > 0 OR `snmebl`.`idx` > 0 )
+    </select>
+
+    <!-- 팔로워 전체 카운트 sns_member_follow_cnt -->
+    <select id="getTotalFollowerCnt" parameterType="String" resultType="_long">
+        SELECT
+            `snmefocn`.`follower_cnt`
+        FROM
+            <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+        WHERE
+            `snmefocn`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 팔로워 중 차단한 카운트 -->
+    <select id="getBlockFollowerCnt" parameterType="SearchDto" resultType="_long">
+        SELECT
+            COUNT(`snmefo`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_member_follow` as `snmefo`
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snmefo`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snmefo`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        WHERE
+                `snmefo`.`follow_uuid` = #{memberUuid}
+            AND `snmefo`.`state`=1
+            AND ( `snmebl2`.`idx` > 0 OR `snmebl`.`idx` > 0 )
+    </select>
+
+    <!-- 회원 팔로우 체크 -->
+    <select id="getCntCheck" parameterType="FollowDto" resultType="int">
+        SELECT
+            COUNT(`snmefo`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        WHERE
+               `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`follow_uuid` = #{followUuid}
+            <if test='state != null'>
+                AND `snmefo`.`state` <![CDATA[ = ]]> #{state}
+            </if>
+    </select>
+
+
+    <!-- 정상적인 sns_member_follow  체크 -->
+    <select id="getFollowInfo" parameterType="FollowDto" resultType="FollowDto">
+        SELECT
+            `snmefo`.`idx`
+            ,`snmefo`.`reg_date`
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        WHERE
+                `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`follow_uuid` = #{followUuid}
+            AND `snmefo`.`state` <![CDATA[ = ]]> 1
+    </select>
+
+    <!-- 회원의 cnt 체크 -->
+    <select id="getMemberCntCheck" parameterType="FollowDto" resultType="_int">
+        SELECT
+            COUNT(`snmefocn`.`member_uuid`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+        WHERE
+            `snmefocn`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 팔로워의 cnt 체크 -->
+    <select id="getFollowerCntCheck" parameterType="FollowDto" resultType="_int">
+        SELECT
+            COUNT(`snmefocn`.`member_uuid`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+        WHERE
+        `snmefocn`.`member_uuid` = #{followUuid}
+    </select>
+
+</mapper>

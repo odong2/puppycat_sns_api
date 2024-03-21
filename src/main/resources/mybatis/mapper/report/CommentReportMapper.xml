@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.report.CommentReportDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 신고 insert -->
+    <insert id="insertCommentReport" parameterType="CommentReportDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_contents_comment_report`
+        <set>
+            `member_uuid`   = #{memberUuid},
+            `comment_idx`   = #{commentIdx},
+            `contents`      = #{contents},
+            `report_code`   = #{reportCode},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 신고 상세사유 insert -->
+    <insert id="insertCommentReportReason" parameterType="CommentReportDto">
+        INSERT INTO <include refid="database" />`sns_contents_comment_report_reason`
+        <set>
+            `report_idx`    = #{idx},
+            `reason`        = #{reason}
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- 신고 내역 수정 -->
+    <update id="updateCommentReport" parameterType="CommentReportDto">
+        UPDATE <include refid="database" />`sns_contents_comment_report`
+        <set>
+            `state`      = #{state},
+            <if test="reportCode != null">
+            `report_code` = #{reportCode},
+            </if>
+            `reg_date`    = #{regDate},
+            `reg_date_tz` = '${convertTZ}'
+        </set>
+        WHERE
+            `idx` = #{idx}
+        LIMIT 1
+    </update>
+
+    <!-- 상세 사유 수정 -->
+    <update id="updateCommentReportReason" parameterType="CommentReportDto">
+        UPDATE <include refid="database" />`sns_contents_comment_report_reason`
+        <set>
+            `reason`     = #{reason}
+        </set>
+        WHERE
+            `report_idx` = #{idx}
+        LIMIT 1
+    </update>
+
+</mapper>

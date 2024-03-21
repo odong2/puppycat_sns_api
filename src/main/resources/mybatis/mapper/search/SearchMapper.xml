@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.search.SearchDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+      SELECT
+   =============================================================== -->
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 푸시 보내기 실패 로그 등록 -->
+    <insert id="insertSearchLog" parameterType="searchLogDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_search_log`
+        <set>
+            `search_word`   = #{searchWord}
+            ,`reg_date`     = #{regDate}
+            ,`reg_date_tz`  = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

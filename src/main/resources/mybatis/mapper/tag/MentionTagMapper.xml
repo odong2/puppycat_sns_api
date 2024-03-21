@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.tag.MentionTagDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 멘션 idx 가져오기 -->
+    <select id="getIdxByMentionTag" parameterType="MentionTagDto" resultType="_long">
+        SELECT
+            `snmeme`.`idx` AS `mentionTagIdx`
+        FROM
+            <include refid="database" />`sns_member_mention` AS `snmeme`
+        WHERE
+            `snmeme`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 컨텐츠에 등록 된 멘션태그 리스트 -->
+    <select id="getContentsMentionTagList" parameterType="MentionTagDto" resultType="MentionTagDto">
+        SELECT
+            `sncomema`.`idx`
+            ,`snmeme`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_contents_mention_mapping` as `sncomema`
+        INNER JOIN <include refid="database" />`sns_member_mention` as `snmeme`
+            ON  `sncomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+                `sncomema`.`contents_idx` = #{contentsIdx}
+            AND `sncomema`.`state`= 1
+    </select>
+
+    <!-- 댓글에 등록 된 멘션태그 리스트 -->
+    <select id="getCommentMentionTagList" parameterType="MentionTagDto" resultType="MentionTagDto">
+        SELECT
+            `sncocomema`.`idx`
+           ,`snmeme`.`member_uuid`
+        FROM <include refid="database" /> `sns_contents_comment_mention_mapping` AS `sncocomema`
+        INNER JOIN <include refid="database" />`sns_member_mention` as `snmeme`
+            ON  `sncocomema`.`mention_idx` = `snmeme`.`idx`
+            AND `snmeme`.`state` = 1
+        WHERE
+                `sncocomema`.`comment_idx` = #{commentIdx}
+            AND `sncocomema`.`state`= 1
+    </select>
+
+
+    <!-- 컨텐츠에 등록 된 멘션태그인지 -->
+    <select id="getContentsMentionTag" parameterType="MentionTagDto" resultType="int">
+        SELECT
+            COUNT(`sncomema`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="database" />`sns_contents_mention_mapping` as `sncomema`
+        WHERE
+                `sncomema`.`contents_idx` = #{contentsIdx}
+            AND `sncomema`.`mention_idx` = #{mentionIdx}
+            AND `sncomema`.`state` = 1
+    </select>
+
+
+    <!-- 댓글에 등록 된 멘션태그인지 -->
+    <select id="getCommentMentionTag" parameterType="MentionTagDto" resultType="int">
+        SELECT
+            COUNT(`sncocomema`.`idx`) AS `iTotalCount`
+        FROM
+            <include refid="database" />`sns_contents_comment_mention_mapping` as `sncocomema`
+        WHERE
+                `sncocomema`.`comment_idx` = #{commentIdx}
+            AND `sncocomema`.`mention_idx` = #{mentionIdx}
+            AND `sncocomema`.`state` = 1
+    </select>
+
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 멘션 등록 insert -->
+    <insert id="insertMentionTag" parameterType="MentionTagDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_member_mention`
+        <set>
+            `member_uuid`   = #{memberUuid},
+            `mention_cnt`  = 1,
+            `state`        = 1
+        </set>
+    </insert>
+
+    <!-- 컨텐츠 멘션 매핑 등록 insert -->
+    <insert id="insertContentsMentionTagMapping" parameterType="MentionTagDto">
+        INSERT INTO <include refid="database" />`sns_contents_mention_mapping`
+        <set>
+            `contents_idx`  = #{contentsIdx},
+            `mention_idx`   = #{mentionIdx},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 댓글 멘션 매핑 등록 insert -->
+    <insert id="insertCommentMentionTagMapping" parameterType="MentionTagDto">
+        INSERT INTO <include refid="database" />`sns_contents_comment_mention_mapping`
+        <set>
+            `comment_idx`   = #{commentIdx},
+            `mention_idx`   = #{mentionIdx},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- 멘션 update (cnt + 1) -->
+    <update id="updateMentionTagCnt" parameterType="MentionTagDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_member_mention`
+        <set>
+            `mention_cnt` = `mention_cnt` + 1
+        </set>
+        WHERE
+            `idx` = #{mentionIdx}
+    </update>
+
+
+    <!--컨텐츠 멘션태그 매핑 제거 -->
+    <update id="removeContentsMentionTagMapping" parameterType="_long" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_mention_mapping`
+        SET
+            `state`  = 0
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+
+    <!-- 댓글 해시태그 매핑 제거 -->
+    <update id="removeCommentMentionTagMapping" parameterType="_long" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_comment_mention_mapping`
+        SET
+            `state`  = 0
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+</mapper>

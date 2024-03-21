@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.follow.FollowDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+         INSERT
+     =============================================================== -->
+    <!-- 팔로우 등록하기 -->
+    <insert id="insert" parameterType="FollowDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_member_follow`
+        <set>
+            `member_uuid`       = #{memberUuid}
+            ,`follow_uuid`      = #{followUuid}
+            ,`state`            = 1
+            ,`reg_date`         = #{regDate}
+            ,`reg_date_tz`      = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 팔로우cnt 등록하기 -->
+    <insert id="insertFollowCnt" parameterType="FollowDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_member_follow_cnt`
+        <set>
+            `member_uuid`       = #{memberUuid}
+            ,`follow_cnt`       =  0
+            ,`follower_cnt`     =  0
+        </set>
+    </insert>
+
+    <!-- 팔로워cnt 등록하기 -->
+    <insert id="insertFollowerCnt" parameterType="FollowDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_member_follow_cnt`
+        <set>
+            `member_uuid`       = #{followUuid}
+            ,`follow_cnt`       =  0
+            ,`follower_cnt`     =  0
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 팔로우 수정 -->
+    <update id="update" parameterType="FollowDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_member_follow`
+        SET
+            `state`         = #{state}
+            ,`reg_date`      = #{regDate}
+            ,`reg_date_tz`   = '${convertTZ}'
+        WHERE
+                `member_uuid` = #{memberUuid}
+            AND `follow_uuid` = #{followUuid}
+    </update>
+
+    <!-- 팔로우cnt +1 -->
+    <update id="updateFollowCntUp" parameterType="FollowDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_member_follow_cnt`
+        SET
+            `follow_cnt`    = `follow_cnt` + 1
+        WHERE
+            `member_uuid` = #{memberUuid}
+    </update>
+
+    <!-- 팔로우cnt -1 -->
+    <update id="updateFollowCntDown" parameterType="FollowDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_member_follow_cnt`
+        SET
+            `follow_cnt`    = `follow_cnt` - 1
+        WHERE
+            `member_uuid` = #{memberUuid}
+    </update>
+
+    <!-- 팔로워cnt +1 -->
+    <update id="updateFollowerCntUp" parameterType="FollowDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_member_follow_cnt`
+        SET
+            `follower_cnt`  = `follower_cnt` + 1
+        WHERE
+            `member_uuid` = #{followUuid}
+    </update>
+
+    <!-- 팔로워cnt -1 -->
+    <update id="updateFollowerCntDown" parameterType="FollowDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_member_follow_cnt`
+        SET
+            `follower_cnt`  = `follower_cnt` - 1
+        WHERE
+            `member_uuid` = #{followUuid}
+    </update>
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

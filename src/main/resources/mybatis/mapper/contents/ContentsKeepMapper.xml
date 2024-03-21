@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.contents.ContentsKeepDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- 보관상태 update -->
+    <update id="updateIsStore" parameterType="ContentsDto">
+        UPDATE
+        <include refid="database" />`sns_contents`
+        <set>
+            `is_keep` = #{isKeep}
+        </set>
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+</mapper>

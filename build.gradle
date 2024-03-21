@@ -1,0 +1,172 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.3'
+	id 'io.spring.dependency-management' version '1.0.13.RELEASE'
+	id 'java'
+	id 'org.sonarqube' version '3.4.0.2513'
+	id 'jacoco'
+}
+
+group = 'com.architecture'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+tasks.register("incrementVersion") {
+	doLast{
+		def ver = version
+		String lastNumber = ver.substring(ver.lastIndexOf('.') + 1)
+		int increment = lastNumber.toInteger() + 1
+		String firstNumber = ver.substring(0, ver.lastIndexOf("."))
+		String result = buildFile.getText().replaceFirst("version='$version'", "version='" + firstNumber + "." + increment + "'")
+		buildFile.setText(result, "UTF-8") // 파일 인코딩 UTF-8 설정
+	}
+}
+
+jar {
+	enabled = false
+}
+
+bootJar {
+	archiveBaseName = 'PET-SNS-API' //베이스 네임
+	//archiveFileName = "PET-SNS-API-" + version+ ".jar"
+	archiveFileName = "PET-SNS-API.jar"
+}
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	all {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+	}
+}
+
+/** spring 자동 재시작
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+}
+dependencies {
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+}
+**/
+
+dependencies {
+	// 기본
+	implementation 'org.springframework.boot:spring-boot-starter'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// 내장 톰캣
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	// Java 라이브러리로 반복되는 getter, setter, toString 등의 메서드 작성 코드를 줄여주는 코드 다이어트 라이브러리
+	implementation 'org.projectlombok:lombok:1.18.24'
+	annotationProcessor 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok' //추가
+	// validation 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// 디비 연결 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2'
+	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+	runtimeOnly 'mysql:mysql-connector-java'
+	// 로그 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+	// redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.session:spring-session-data-redis'
+	// s3 업로드
+//	implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.2'
+	// excel 다운로드
+	implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.0.0'
+	// json
+	implementation group: 'org.json', name: 'json', version: '20220924'
+	// commons-codec base64 codec
+	implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
+
+	// image resize
+	implementation 'com.github.downgoon:marvin:1.5.5'
+	implementation 'com.github.downgoon:MarvinPlugins:1.5.5'
+
+
+	// 이미지 리사이징중 ImageIO에서 webp 지원을 안함
+	// WebP image-io for Java
+	implementation group: 'org.sejda.imageio', name: 'webp-imageio', version: '0.1.6'
+
+	// json web token(JWT)
+	implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+	implementation group: 'org.glassfish.jaxb', name: 'jaxb-runtime'
+
+	// sns+sqs
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-messaging', version: '2.2.3.RELEASE'
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-autoconfigure', version: '2.2.3.RELEASE'
+	implementation 'software.amazon.awssdk:sns'
+	implementation 'software.amazon.awssdk:sqs'
+	implementation platform('software.amazon.awssdk:bom:2.20.0')
+
+	// thumbor upload
+	implementation 'com.squareup:pollexor:3.0.0'
+
+    // sns+sqs
+    implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-messaging', version: '2.2.3.RELEASE'
+    implementation group: 'org.springframework.cloud', name: 'spring-cloud-aws-autoconfigure', version: '2.2.3.RELEASE'
+    implementation 'software.amazon.awssdk:sns'
+    implementation 'software.amazon.awssdk:sqs'
+    implementation platform('software.amazon.awssdk:bom:2.20.0')
+
+
+    // fcm push
+    implementation 'com.google.firebase:firebase-admin:9.1.1'
+
+	// curl
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '3.1.7'
+
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+sonarqube {
+	properties {
+		property 'sonar.host.url', project.properties['http://localhost:9000']
+		property 'sonar.login', project.properties['squ_4b4aad797f16ad32fd4f8485017f63b44d2e9a17']
+		property 'sonar.sources', 'src/main/java'
+		property 'sonar.java.binaries', 'build/classes'
+		property 'sonar.exclusions', '**/test/**, **/Q*.java, **/*Doc*.java, **/resources/**'
+		property 'sonar.profile', 'Backend way'
+	}
+}
+jacocoTestReport {
+	reports {
+		html.enabled true // html 만들어 - 로컬에서 쉽게 보기 위함
+		xml.enabled true // xml 만들어 - 소나큐브 연동 위함
+		csv.enabled true // csv 안 만들어
+		//xml.destination file("build/jacoco/result.xml")
+	}
+}
+
+
+jacoco {
+	// JaCoCo 버전
+	toolVersion = '0.8.5'
+
+//  테스트결과 리포트를 저장할 경로 변경
+//  default는 "$/jacoco"
+//  reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+
+test.onlyIf {
+	!project.hasProperty('test')
+}
+
+test {
+	useJUnitPlatform()
+}

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.noti.NotiDao">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+      SELECT
+   =============================================================== -->
+    <!--  컨텐츠 첫번째 이미지  -->
+    <select id="getContentsImg" parameterType="long" resultType="string">
+        SELECT
+            `sncoim`.`url`
+        FROM <include refid="database" />`sns_contents_img` AS `sncoim`
+        LEFT JOIN <include refid="database"/>`sns_contents_img_restrain` AS `sncoimre`
+            ON `sncoimre`.`img_idx` = `sncoim`.`idx`
+        WHERE
+                 `sncoim`.`contents_idx` = #{contentsIdx}
+            AND  `sncoim`.`state` = 1
+            AND  `sncoimre`.`idx` IS NULL
+        ORDER BY `sncoim`.`sort` ASC
+        LIMIT 1
+    </select>
+
+
+    <!-- 컨텐츠에 멘션 된 회원 IDX  -->
+    <select id="getContentsMentionMember" parameterType="NotiDto" resultType="String">
+        SELECT
+            DISTINCT `snmeme`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_contents_mention_mapping` as `sncomema`
+        INNER JOIN <include refid="database" />`sns_member_mention` AS `snmeme`
+            ON `sncomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+                `sncomema`.contents_idx = #{contentsIdx}
+            <if test="modiDate != null and modiDate != ''">
+                AND `sncomema`.`reg_date` <![CDATA[ >= ]]> #{modiDate}
+            </if>
+            AND `sncomema`.`state` = 1
+    </select>
+
+    <!-- 댓글에 멘션 된 회원 IDX  -->
+    <select id="getCommentMentionMember" parameterType="long" resultType="String">
+        SELECT
+            DISTINCT `snmeme`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_contents_comment_mention_mapping` as `sncocomema`
+        INNER JOIN `sns_member_mention` AS `snmeme`
+            ON `sncocomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+                `sncocomema`.`comment_idx` = #{commentIdx}
+            AND `sncocomema`.`state` = 1
+    </select>
+
+    <!--  이미지 태그 된 회원 IDX  -->
+    <select id="getImgTagMember" parameterType="NotiDto" resultType="String">
+        SELECT
+            DISTINCT `snimmetama`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_img_member_tag_mapping` AS `snimmetama`
+        WHERE
+                `snimmetama`.`contents_idx` = #{contentsIdx}
+            <if test="modiDate != null and modiDate != ''">
+                AND `snimmetama`.`reg_date` <![CDATA[ >= ]]> #{modiDate}
+            </if>
+            AND `snimmetama`.`state` = 1
+    </select>
+
+
+    <!--  이미지 태그 된 회원 IDX  -->
+    <select id="getPrevImgTagMember" parameterType="NotiDto" resultType="String">
+        SELECT
+            DISTINCT `snimmetama`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_img_member_tag_mapping` as `snimmetama`
+        WHERE
+                `snimmetama`.`contents_idx` = #{contentsIdx}
+            AND `snimmetama`.`reg_date` <![CDATA[ < ]]> #{modiDate}
+    </select>
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

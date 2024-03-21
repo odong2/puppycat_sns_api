@@ -1,0 +1,17 @@
+.gradle/
+.idea/
+*.iml
+*.iws
+/build/
+/logs/
+/out/
+/work/
+gradle.properties
+/src/main/resources/application.properties
+/src/main/resources/application-dev.properties
+/src/main/resources/application-stg.properties
+/src/main/resources/application-prd.properties
+/src/main/resources/application-oauth.properties
+/src/main/resources/firebase/*
+/src/main/resources/okcert3
+/src/main/resources/authkey/*

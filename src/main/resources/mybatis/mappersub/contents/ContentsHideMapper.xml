@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.contents.ContentsHideDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 저장 내역 가져오기 -->
+    <select id="oGetTargetInfo" parameterType="ContentsHideDto" resultType="ContentsHideDto">
+        SELECT
+            `sncohi`.`idx`,
+            `sncohi`.`state`
+        FROM
+            <include refid="database" />`sns_contents_hide` AS `sncohi`
+        WHERE
+                `sncohi`.`contents_idx`  = #{contentsIdx}
+            AND `sncohi`.`member_uuid`   = #{memberUuid}
+        LIMIT 1
+    </select>
+
+</mapper>

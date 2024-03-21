@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.member.FavoriteMemberDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberFavoriteColumns">
+
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 교류많은 회원 카운트 -->
+    <select id="getFavoriteMemberCount" parameterType="SearchDto" resultType="_long">
+        SELECT
+            COUNT(`snmefo`.`follow_uuid`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_follow_contents_like_cnt` as `snfocolicn`
+        INNER JOIN <include refid="database" />`sns_member_follow` AS `snmefo`
+            ON `snfocolicn`.`follow_idx` =  `snmefo`.`idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefo`.`follow_uuid` = `snmefocn`.`member_uuid`
+        WHERE
+                `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snfocolicn`.`like_cnt` >= 2;
+    </select>
+
+    <!--  교류많은 회원 리스트 -->
+    <select id="getFavoriteMemberList" parameterType="SearchDto" resultType="MemberInfoDto">
+        SELECT
+            `snmefo`.`follow_uuid` AS `uuid`
+            , ${memberBadge}
+        FROM
+            <include refid="database" />`sns_follow_contents_like_cnt` as `snfocolicn`
+        INNER JOIN <include refid="database" />`sns_member_follow` AS `snmefo`
+            ON `snfocolicn`.`follow_idx` =  `snmefo`.`idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefo`.`follow_uuid` = `snmefocn`.`member_uuid`
+        WHERE
+                `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snfocolicn`.`like_cnt` >= 2
+        ORDER BY `snfocolicn`.`like_cnt`  DESC, `snfocolicn`.`reg_date` DESC
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+    </select>
+
+    <!--  회사 계정 리스트 -->
+    <select id="getOfficialAccountList" parameterType="SearchDto" resultType="MemberInfoDto">
+        SELECT
+            `snmead`.`member_uuid` AS `uuid`
+        FROM <include refid="database" />`sns_member_admin` AS `snmead`
+        ORDER BY `snmead`.`reg_date` DESC
+        LIMIT 1
+    </select>
+
+    <!-- 오늘 등록한 게시물 중 최근 등록일 가져오기 -->
+    <select id="getLastRegDateByOfficial" parameterType="MemberInfoDto" resultType="String">
+        SELECT
+            `snco`.`reg_date`
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+                `snco`.`member_uuid` = #{uuid}
+            AND `snco`.`state`       = 1
+            AND `snco`.`is_keep`     = 0
+            AND `snco`.`reg_date` <![CDATA[ >= ]]> #{regDate}
+        ORDER BY `snco`.`reg_date` DESC
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.report.ContentsReportDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 해당 멤버 같은 값을 가지고 있는지 체크 -->
+    <select id="oGetTargetInfo" parameterType="ContentsReportDto" resultType="ContentsReportDto">
+        SELECT
+            `sncore`.`idx`,
+            `sncore`.`report_code`,
+            `sncore`.`state`
+        FROM
+            <include refid="database" />`sns_contents_report` AS `sncore`
+        WHERE
+                `sncore`.`member_uuid`    = #{memberUuid}
+            AND `sncore`.`contents_idx`  = #{contentsIdx}
+        LIMIT 1
+    </select>
+
+    <!-- 신고사유 목록 조회 -->
+    <select id="lGetListReportCode" resultType="ContentsReportDto">
+        SELECT
+            `snreco`.`idx` AS `reportCode`,
+            `snreco`.`name`
+        FROM
+            <include refid="database"/>`sns_report_code` AS `snreco`
+        WHERE
+            `snreco`.`state` = 1
+    </select>
+
+    <!-- 신고된 콘텐츠 정보 조회 -->
+    <select id="oGetContentsData" parameterType="ContentsReportDto" resultType="String">
+        SELECT
+            `snco`.`contents`
+        FROM
+            <include refid="database"/>`sns_contents` AS `snco`
+        WHERE
+            `snco`.`idx` = #{contentsIdx}
+    </select>
+
+</mapper>

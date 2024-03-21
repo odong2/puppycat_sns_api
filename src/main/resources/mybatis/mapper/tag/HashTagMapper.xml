@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.tag.HashTagDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 해시태그 등록 insert -->
+    <insert id="insertHashTag" parameterType="HashTagDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_hash_tag`
+        <set>
+            `hash_tag`      = #{hashTag},
+            `hash_tag_cnt`  = 1,
+            `state`         = 1
+        </set>
+    </insert>
+
+    <!-- 컨텐츠 해시태그 매핑 등록 insert -->
+    <insert id="insertContentsHashTagMapping" parameterType="HashTagDto">
+        INSERT INTO <include refid="database" />`sns_contents_hash_tag_mapping`
+        <set>
+            `contents_idx`  = #{contentsIdx},
+            `hash_tag_idx`  = #{hashTagIdx},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 댓글 해시태그 매핑 등록 insert -->
+    <insert id="insertCommentHashTagMapping" parameterType="HashTagDto">
+        INSERT INTO <include refid="database" />`sns_contents_comment_hash_tag_mapping`
+        <set>
+            `comment_idx`   = #{commentIdx},
+            `hash_tag_idx`  = #{hashTagIdx},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- 해시태그 update (cnt + 1) -->
+    <update id="updateHashTagCnt" parameterType="HashTagDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_hash_tag`
+        <set>
+            `hash_tag_cnt` = `hash_tag_cnt` + 1
+        </set>
+        WHERE
+            `idx` = #{hashTagIdx}
+    </update>
+
+
+    <!--컨텐츠 해시태그 매핑 제거 -->
+    <update id="removeContentsHashTagMapping" parameterType="_long" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_hash_tag_mapping`
+        SET
+            `state`  = 0
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+
+    <!-- 댓글 해시태그 매핑 제거 -->
+    <update id="removeCommentHashTagMapping" parameterType="_long" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_comment_hash_tag_mapping`
+        SET
+            `state`  = 0
+        WHERE
+            `idx` = #{idx}
+    </update>
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+
+</mapper>

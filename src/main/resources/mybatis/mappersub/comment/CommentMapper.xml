@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.comment.CommentDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+       SELECT
+    =============================================================== -->
+    <!-- 회원의 cnt 체크 -->
+    <select id="getCommentCntCheck" parameterType="CommentDto" resultType="_int">
+        SELECT
+            COUNT(`sncococn`.`contents_idx`) AS `iTotalCount`
+        FROM
+            <include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+        WHERE
+            `sncococn`.`contents_idx` = #{contentsIdx}
+    </select>
+
+    <!-- 고유 아이디 카운트 가져오기 -->
+    <select id="getCountByUuid" parameterType="string" resultType="int">
+        SELECT
+            COUNT(`sncoco`.`idx`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        WHERE
+            `sncoco`.`uuid` = #{uuid}
+    </select>
+
+    <!-- 신고한 컨텐츠인지 조회 -->
+    <select id="getCommentReportCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`idx`)
+        FROM <include refid="database"/>`sns_contents_comment_report`
+        WHERE
+                `member_uuid` = #{loginMemberUuid}
+            AND `comment_idx` = #{commentIdx}
+            AND `state` = 1
+    </select>
+
+    <!-- 댓글 작성자 uuid 가져오기 -->
+    <select id="getMemberUuidByIdx" parameterType="Long" resultType="String">
+        SELECT
+            `sncoco`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        WHERE
+            `sncoco`.`idx` = #{commentIdx}
+    </select>
+
+    <!-- 부모 + 자식 댓글 카운트 가져오기 -->
+    <select id="getTotalSumCommentCount" parameterType="commentDto" resultType="commentDto">
+        SELECT
+            `sncococn`.`comment_cnt` AS `total_comment_cnt`
+        FROM
+            <include refid="database" />`sns_contents_comment_cnt` AS `sncococn`
+        WHERE
+            `sncococn`.`contents_idx` = #{contentsIdx}
+    </select>
+    <!--- 시작 -->
+    <!-- 부모 + 자식 댓글 카운트 가져오기 -->
+    <select id="getCheckParent" parameterType="searchDto" resultType="Long">
+        SELECT
+            `sncoco`.`parent_idx`
+        FROM
+        <include refid="database" />`sns_contents_comment` AS `sncoco`
+        WHERE
+            `sncoco`.`contents_idx` = #{contentsIdx}
+        AND
+            `sncoco`.`idx` = #{commentIdx}
+    </select>
+
+    <!-- 부모 or 자식 댓글 카운트 가져오기 -->
+    <select id="getRowNum" parameterType="searchDto" resultType="CommentDto">
+        SELECT
+            `sncoco`.`idx`,
+        <choose>
+            <when test="parentIdx == 0">
+                row_number() over(order by `sncoco`.`idx` DESC) AS `rowNum`
+            </when>
+            <when test="parentIdx > 0">
+                row_number() over(order by `sncoco`.`idx` ASC) AS `rowNum`
+            </when>
+        </choose>
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        INNER JOIN <include refid="database" />`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        LEFT JOIN <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+            ON `sncocoli`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocoli`.`member_uuid` = #{memberUuid}
+        <if test="memberUuid != null">
+        LEFT JOIN <include refid="database" />`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{memberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl1`.member_uuid = #{memberUuid}
+            AND `snmebl1`.`state` = 1
+        </if>
+        WHERE
+            `sncoco`.`contents_idx` = #{contentsIdx}
+        AND
+            `sncoco`.`parent_idx` = #{parentIdx}
+        <if test="memberUuid != null">
+        AND
+            `sncocore`.`idx` IS NULL
+        AND
+            `snmebl`.`idx` IS NULL
+        AND
+            `snmebl1`.`idx` IS NULL
+        </if>
+    </select>
+
+    <!-- 부모 댓글 or 자식 리스트 가져오기 -->
+    <select id="getFocusList" parameterType="searchDto" resultType="CommentDto">
+        SELECT
+            `sncoco`.`idx`,
+            `sncoco`.`parent_idx`,
+            `sncoco`.`member_uuid`,
+            `sncolicn`.`like_cnt`,
+            `sncoco`.`uuid`,
+            `sncoco`.`contents_idx`,
+            `sncoco`.`contents`,
+            `sncoco`.`state`,
+            IFNULL(`sncocoli`.`state`, 0) AS `likeState`,
+            ${memberBadge},
+            CONVERT_TZ(`sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database" />`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `sncoco`.`contents_idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        LEFT JOIN <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+            ON `sncocoli`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocoli`.`member_uuid` = #{memberUuid}
+        <if test="memberUuid != null">
+        LEFT JOIN <include refid="database" />`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{memberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.member_uuid = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        </if>
+        WHERE
+            `sncoco`.`contents_idx` = #{contentsIdx}
+        AND
+            `sncoco`.`state` = 1
+        AND
+            `sncoco`.`idx` = #{commentIdx}
+        AND
+            `sncoco`.`parent_idx` = #{parentIdx}
+        <if test="memberUuid != null">
+        AND
+            `sncocore`.`idx` IS NULL
+        AND
+            `snmebl`.`idx` IS NULL
+        AND
+            `snmebl1`.`idx` IS NULL
+        </if>
+        <choose>
+            <when test="parentIdx == 0">
+                ORDER BY `sncoco`.`reg_date` DESC
+            </when>
+            <when test="parentIdx > 0">
+                ORDER BY `sncoco`.`reg_date` ASC
+            </when>
+        </choose>
+    </select>
+    <!--- 끝 -->
+
+    <!-- 부모 댓글 idx 조회 -->
+    <select id="getCommentInfoByIdx" parameterType="Long" resultType="CommentDto">
+        SELECT
+            `contents_idx`,
+            `member_uuid`,
+            `parent_idx`
+        FROM <include refid="database"/>`sns_contents_comment`
+        WHERE
+                `idx`   = #{idx}
+            AND `state` = 1
+    </select>
+
+    <!-- 부모 댓글 카운트 가져오기 -->
+    <select id="iGetParentTotalCommentCnt" parameterType="searchDto" resultType="_int">
+        SELECT
+            count(`sncoco`.`idx`)
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database" />`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        LEFT JOIN <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+            ON `sncocoli`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocoli`.`member_uuid` = #{memberUuid}
+        <if test="memberUuid != null">
+        LEFT JOIN <include refid="database" />`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{memberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl1`.member_uuid = #{memberUuid}
+            AND `snmebl1`.`state` = 1
+        </if>
+        WHERE
+            `sncoco`.`contents_idx` = #{contentsIdx}
+        AND
+            `sncoco`.`state` = 1
+        AND
+            `sncoco`.`parent_idx` = 0
+        <if test="memberUuid != null">
+        AND
+            `sncocore`.`idx` IS NULL
+        AND
+            `snmebl`.`idx` IS NULL
+        AND
+            `snmebl1`.`idx` IS NULL
+        </if>
+    </select>
+
+    <!-- 부모 댓글 리스트 가져오기 -->
+    <select id="getParentCommentList" parameterType="searchDto" resultType="CommentDto">
+        SELECT
+            `sncoco`.`idx`,
+            `sncoco`.`parent_idx`,
+            `sncoco`.`member_uuid`,
+            `sncocolicn`.`like_cnt` AS `commentLikeCnt`,
+            `sncoco`.`uuid`,
+            `sncoco`.`contents_idx`,
+            `sncoco`.`contents`,
+            `sncoco`.`state`,
+            IFNULL(`sncocoli`.`state`, 0) AS `likeState`,
+            ${memberBadge},
+            CONVERT_TZ(`sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database" />`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        LEFT JOIN <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+            ON `sncocoli`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocoli`.`member_uuid` = #{memberUuid}
+        <if test="memberUuid != null">
+        LEFT JOIN <include refid="database" />`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{memberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl1`.member_uuid = #{memberUuid}
+            AND `snmebl1`.`state` = 1
+        </if>
+        WHERE
+            `sncoco`.`contents_idx` = #{contentsIdx}
+        AND
+            `sncoco`.`state` = 1
+        AND
+            `sncoco`.`parent_idx` = 0
+        <if test="memberUuid != null">
+        AND
+            `sncocore`.`idx` IS NULL
+        AND
+            `snmebl`.`idx` IS NULL
+          AND
+            `snmebl1`.`idx` IS NULL
+        </if>
+        ORDER BY `sncoco`.`reg_date` DESC
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+    </select>
+
+    <!-- 대 댓글 카운트 가져오기 -->
+    <select id="iGetChildTotalCommentCnt" parameterType="searchDto" resultType="_int">
+        SELECT
+            count(`sncoco`.`idx`)
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database" />`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        LEFT JOIN <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+            ON `sncocoli`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocoli`.`member_uuid` = #{memberUuid}
+        <if test="memberUuid != null">
+        LEFT JOIN <include refid="database" />`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{memberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl1`.member_uuid = #{memberUuid}
+            AND `snmebl1`.`state` = 1
+        </if>
+        WHERE `sncoco`.`parent_idx` = #{parentIdx}
+            AND `sncoco`.`state` = 1
+        <if test="memberUuid != null">
+            AND `sncocore`.`idx` IS NULL
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl1`.`idx` IS NULL
+        </if>
+    </select>
+
+    <!-- 대 댓글 리스트 가져오기 -->
+    <select id="getChildCommentList" parameterType="searchDto" resultType="CommentDto">
+        SELECT
+            `sncoco`.`idx`,
+            `sncoco`.`parent_idx`,
+            `sncoco`.`member_uuid`,
+            `sncocolicn`.`like_cnt` AS `commentLikeCnt`,
+            `sncoco`.`uuid`,
+            `sncoco`.`contents_idx`,
+            `sncoco`.`contents`,
+            `sncoco`.`state`,
+            IFNULL(`sncocoli`.`state`, 0) AS `likeState`,
+            ${memberBadge},
+            CONVERT_TZ(`sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database" />`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        LEFT JOIN <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+            ON `sncocoli`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocoli`.`member_uuid` = #{memberUuid}
+        <if test="memberUuid != null">
+        LEFT JOIN <include refid="database" />`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{memberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl1`.member_uuid = #{memberUuid}
+            AND `snmebl1`.`state` = 1
+        </if>
+        WHERE `sncoco`.`parent_idx` = #{parentIdx}
+            AND `sncoco`.`state` = 1
+        <if test="memberUuid != null">
+            AND `sncocore`.`idx` IS NULL
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl1`.`idx` IS NULL
+        </if>
+        ORDER BY `sncoco`.`reg_date` ASC
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+    </select>
+
+    <!-- 상태 값에 따른 댓글 개수 체크 -->
+    <select id="getCommentCnt" parameterType="CommentDto" resultType="int">
+        SELECT
+            COUNT(`sncoco`.`idx`)
+        FROM <include refid="database"/>`sns_contents_comment` AS `sncoco`
+        WHERE
+                    `sncoco`.`idx` = #{idx}
+                AND `sncoco`.`contents_idx` = #{contentsIdx}
+            <if test='state != null'>
+                AND `sncoco`.`state`= #{state}
+            </if>
+            <if test="memberUuid != null">
+                AND `sncoco`.`member_uuid` = #{memberUuid}
+            </if>
+    </select>
+
+    <!-- 부모 댓글 idx 조회 -->
+    <select id="getParentIdxByIdx" parameterType="Long" resultType="long">
+        SELECT
+            `parent_idx`
+        FROM <include refid="database"/>`sns_contents_comment`
+        WHERE
+            `idx` = #{idx}
+    </select>
+
+    <!-- 좋아요 많은 댓글 (컨텐츠 상세) -->
+    <select id="getLikeManyComment" parameterType="SearchDto" resultType="CommentDto">
+        SELECT
+            `snco`.`idx` AS `contents_idx`,
+            `sncoco`.`idx`,
+            `sncoco`.`member_uuid`,
+            `sncoco`.`contents`,
+            CONVERT_TZ(`sncoco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            IFNULL(`sncocolicn`.`like_cnt`,0) AS `like_cnt`,
+            ${memberBadge}
+        FROM <include refid="database"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database"/>`sns_contents` AS `snco`
+            ON `sncoco`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncoco`.`member_uuid`
+        LEFT JOIN <include refid="database"/>`sns_contents_comment_like_cnt` AS `sncocolicn`
+            ON `sncocolicn`.`comment_idx` = `sncoco`.`idx`
+        LEFT JOIN <include refid="database"/>`sns_contents_comment_report` AS `sncocore`
+            ON `sncocore`.`comment_idx` = `sncoco`.`idx`
+            AND `sncocore`.`member_uuid` = #{loginMemberUuid}
+            AND `sncocore`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `sncoco`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        WHERE
+                `sncoco`.`contents_idx`  = #{contentsIdx}
+            AND `sncoco`.`state`         = 1
+            AND `sncoco`.`parent_idx`    = 0
+            AND `sncocore`.`state`       IS NULL
+            AND `snmebl`.`state`         IS NULL
+            AND `snmebl2`.`state`        IS NULL
+        ORDER BY
+            `contents_idx` DESC, `like_cnt` DESC, `sncoco`.`reg_date` DESC
+        LIMIT 1
+    </select>
+
+    <!-- 대 댓글 작성자 인지 체크 -->
+    <select id="checkRemoveAuth" parameterType="CommentDto" resultType="int">
+        SELECT
+            COUNT(`sncoco`.`idx`)
+        FROM
+        <include refid="database"/>`sns_contents_comment` AS `sncoco`
+        WHERE
+            `sncoco`.`member_uuid` = #{memberUuid}
+        AND `sncoco`.`idx` = #{idx}
+    </select>
+
+    <!-- 멘션 목록 -->
+    <select id="getCommentMentionTags" parameterType="long" resultType="String">
+        SELECT
+            `snmeme`.`member_uuid` AS `memberUuid`
+        FROM
+        <include refid="database" />`sns_contents_comment_mention_mapping` AS `sncocomema`
+        INNER JOIN <include refid="database" />`sns_member_mention` AS `snmeme`
+            ON `sncocomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+            `sncocomema`.`comment_idx`  = #{idx}
+    </select>
+
+    <!-- 부모 댓글 idx 조회 -->
+    <select id="getCommentCntByIdx" parameterType="Long" resultType="_int">
+        SELECT
+            COUNT(`sncoco`.`idx`) AS `commentCnt`
+        FROM <include refid="database" />`sns_contents_comment` AS `sncoco`
+        WHERE
+                `sncoco`.`idx`   = #{commentIdx}
+            AND `sncoco`.`state` = 1
+    </select>
+
+</mapper>

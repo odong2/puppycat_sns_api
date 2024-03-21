@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.contents.ContentsSaveDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+       SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 저장 등록 -->
+    <insert id="insertContentsSave" parameterType="ContentsSaveDto">
+        INSERT INTO <include refid="database" />`sns_contents_save`
+        <set>
+            `contents_idx`  = #{contentsIdx},
+            `member_uuid`   = #{memberUuid},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 저장 cnt 테이블 등록 insert -->
+    <insert id="insertContentsSaveCnt" parameterType="ContentsSaveDto">
+        INSERT INTO <include refid="database" />`sns_contents_save_cnt`
+        <set>
+            `contents_idx`  = #{contentsIdx},
+            `save_cnt`      = 0
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- 상태값 변경 -->
+    <update id="updateContentsSave" parameterType="ContentsSaveDto">
+        UPDATE <include refid="database" />`sns_contents_save`
+        <set>
+            `state`       = #{state},
+            `reg_date`    = #{regDate},
+            `reg_date_tz` = '${convertTZ}'
+        </set>
+        WHERE
+            `idx`   =   #{idx}
+        LIMIT 1
+    </update>
+
+    <!-- 저장 cnt +1 -->
+    <update id="updateContentsSaveCntUp" parameterType="ContentsSaveDto">
+        UPDATE <include refid="database" />`sns_contents_save_cnt`
+        <set>
+            `save_cnt`       = `save_cnt` + 1
+        </set>
+        WHERE
+            `contents_idx`   =   #{contentsIdx}
+        LIMIT 1
+    </update>
+
+    <!-- 저장 cnt -1 -->
+    <update id="updateContentsSaveCntDown" parameterType="ContentsSaveDto">
+        UPDATE <include refid="database" />`sns_contents_save_cnt`
+        <set>
+            `save_cnt`       = `save_cnt` -1
+        </set>
+        WHERE
+            `contents_idx`   =   #{contentsIdx}
+        LIMIT 1
+    </update>
+
+</mapper>

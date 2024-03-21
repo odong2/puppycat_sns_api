@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.contents.ContentsLikeDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+       SELECT
+    =============================================================== -->
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 좋아요 등록 -->
+    <insert id="insertContentsLike" parameterType="ContentsLikeDto">
+        INSERT INTO <include refid="database" />`sns_contents_like`
+        <set>
+            `contents_idx`  = #{contentsIdx},
+            `member_uuid`   = #{loginMemberUuid},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 좋아요 cnt 테이블 등록 insert -->
+    <insert id="insertContentsLikeCnt" parameterType="ContentsLikeDto">
+        INSERT INTO <include refid="database" />`sns_contents_like_cnt`
+        <set>
+            `contents_idx`  = #{contentsIdx},
+            `like_cnt`      = 0
+        </set>
+    </insert>
+
+    <!-- 팔로우 컨텐츠 좋아요 cnt 테이블 등록 insert -->
+    <insert id="insertFollowContentsLikeCnt" parameterType="ContentsLikeDto">
+        INSERT INTO <include refid="database" />`sns_follow_contents_like_cnt`
+        <set>
+            `follow_idx`    = #{followIdx},
+            `like_cnt`      = 0,
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- 상태값 변경 -->
+    <update id="updateContentsLike" parameterType="ContentsLikeDto">
+        UPDATE <include refid="database" />`sns_contents_like`
+        <set>
+            `state`       = #{state},
+            `reg_date`    = #{regDate},
+            `reg_date_tz` = '${convertTZ}'
+        </set>
+        WHERE
+            `idx`   =   #{idx}
+        LIMIT 1
+    </update>
+
+    <!-- 좋아요 cnt +1 -->
+    <update id="updateContentsLikeCntUp" parameterType="ContentsLikeDto">
+        UPDATE <include refid="database" />`sns_contents_like_cnt`
+        <set>
+            `like_cnt`       = `like_cnt` + 1,
+        </set>
+        WHERE
+            `contents_idx`   =   #{contentsIdx}
+        LIMIT 1
+    </update>
+
+    <!-- sns_follow_contents_like_cnt 좋아요 cnt +1 -->
+    <update id="updateFollowContentsLikeCntUp" parameterType="ContentsLikeDto">
+        UPDATE <include refid="database" />`sns_follow_contents_like_cnt`
+        <set>
+            `like_cnt`       = `like_cnt` + 1,
+            `reg_date`       = #{regDate}
+        </set>
+        WHERE
+            `follow_idx`   =   #{followIdx}
+        LIMIT 1
+    </update>
+
+    <!-- 좋아요 cnt -1 -->
+    <update id="updateContentsLikeCntDown" parameterType="ContentsLikeDto">
+        UPDATE <include refid="database" />`sns_contents_like_cnt`
+        <set>
+            `like_cnt`       = `like_cnt` - 1
+        </set>
+        WHERE
+            `contents_idx`   =   #{contentsIdx}
+        LIMIT 1
+    </update>
+
+    <!-- sns_follow_contents_like_cnt 좋아요 cnt -1 -->
+    <update id="updateFollowContentsLikeCntDown" parameterType="ContentsLikeDto">
+        UPDATE <include refid="database" />`sns_follow_contents_like_cnt`
+        SET
+            `like_cnt`     = `like_cnt` - 1
+        WHERE
+            `follow_idx`   =   #{followIdx}
+        LIMIT 1
+    </update>
+
+    <!-- sns_follow_contents_like_cnt 좋아요 cnt = 0 -->
+    <update id="updateFollowContentsLikeReset" parameterType="ContentsLikeDto">
+        UPDATE <include refid="database" />`sns_follow_contents_like_cnt`
+        SET
+            `like_cnt`     = 0
+        WHERE
+            `follow_idx`   =   #{followIdx}
+        LIMIT 1
+    </update>
+
+</mapper>

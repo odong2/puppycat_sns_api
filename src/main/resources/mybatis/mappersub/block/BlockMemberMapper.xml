@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.block.BlockMemberDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 검색 조건 -->
+    <sql id="blockSearch">
+        <where>
+            <if test="searchWord != '' and searchWord != null">
+                `snmebl`.`block_uuid` IN
+                <foreach collection="memberUuidList" item="uuid" open="("  separator="," close=")">
+                    #{uuid}
+                </foreach>
+            </if>
+                AND `snmebl`.`member_uuid` = #{memberUuid}
+                AND `snmebl`.`state`       = 1
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 전체 카운트 가져오기 -->
+    <select id="iGetTotalBlockCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snmebl`.`idx`)
+        FROM
+            <include refid="database" />`sns_member_block` AS `snmebl`
+        <include refid="blockSearch"/>
+    </select>
+
+    <!-- 전체 차단리스트 가져오기 -->
+    <select id="lGetBlockList" parameterType="SearchDto" resultType="String">
+        SELECT
+            `snmebl`.`block_uuid` AS `blockUuid`
+        FROM
+            <include refid="database" />`sns_member_block` AS `snmebl`
+        <include refid="blockSearch"/>
+        ORDER BY  `snmebl`.`reg_date` DESC
+        <if test="pagination != null">
+        LIMIT #{recordSize}
+        OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 해당 멤버 같은 값을 가지고 있는지 체크 -->
+    <select id="oGetTargetInfo" parameterType="BlockMemberDto" resultType="BlockMemberDto">
+        SELECT
+            `snmebl`.`idx`,
+            `snmebl`.`state`
+        FROM
+            <include refid="database" />`sns_member_block` AS `snmebl`
+        WHERE
+                `snmebl`.`member_uuid` = #{memberUuid}
+            AND `snmebl`.`block_uuid`  = #{blockUuid}
+        LIMIT 1
+    </select>
+
+    <!-- 정상적인 차단 내역이 있는지 체크 -->
+    <select id="getBlockByUuid" parameterType="BlockMemberDto" resultType="_int">
+        SELECT
+            COUNT(`snmebl`.`idx`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_member_block` AS `snmebl`
+        WHERE
+                `snmebl`.`member_uuid` = #{memberUuid}
+            AND `snmebl`.`block_uuid`  = #{blockUuid}
+            AND `snmebl`.`state` = 1
+        LIMIT 1
+    </select>
+
+</mapper>

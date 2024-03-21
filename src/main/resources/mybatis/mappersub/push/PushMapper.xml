@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.push.PushDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <select id="getPushTypeTitle" parameterType="int" resultType="String">
+        SELECT
+            `snputy`.`title`
+        FROM
+            <include refid="database" />`sns_push_type` as `snputy`
+        WHERE
+            `snputy`.`idx` = #{idx}
+        LIMIT 1
+    </select>
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

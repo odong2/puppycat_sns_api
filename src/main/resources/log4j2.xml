@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <!--  해당 설정파일에서 사용하는 프로퍼티-->
+    <Properties>
+        <!-- 로거 이름 -->
+        <Property name="logNm">Spring_Log4j2_Log</Property>
+        <Property name="pushFailLogNm">Push_Fail_Log</Property>
+        <!-- 로그 메시지 출력 형식을 지정하는 프로퍼티 -->
+        <Property name="layoutPattern">%style{%d{yyyy/MM/dd HH:mm:ss,SSS}}{cyan} %highlight{[%-5p]}{FATAL=bg_red, ERROR=red,
+            INFO=green, DEBUG=blue}  [%C] %style{[%t]}{yellow}- %m%n -</Property>
+    </Properties>
+    <!-- LogEvent를 전달해주는 Appender-->
+    <Appenders>
+        <!--
+        <File name="Date_File" fileName="logs/log4j2/${logNm}.${date:yyyy-MM-dd}.log" append="true">
+            <PatternLayout pattern="${layoutPattern}" disableAnsi = "false"/>
+        </File>
+        -->
+
+        <!-- 콘솔에 로그 출력 -->
+        <Console name="Console_Appender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${layoutPattern}" disableAnsi = "false"/>
+        </Console>
+
+        <!-- 파일에 로그 출력 -->
+        <!-- 로그 파일은 하루마다 새로 생성되고, 크기가 100MB를 초과하면 새 파일을 생성. -->
+        <RollingFile name="File_Appender" fileName="logs/log4j2/${logNm}.log" filePattern="logs/log4j2/%d{yyyy-MM-dd}/${logNm}_%d{yyyy-MM-dd}_%i.log.gz">
+            <PatternLayout pattern="${layoutPattern}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10" fileIndex="min"/>
+        </RollingFile>
+
+        <RollingFile name="Push_Fail" fileName="logs/push/${pushFailLogNm}.log" filePattern="logs/push/%d{yyyy-MM-dd}/${pushFailLogNm}_%d{yyyy-MM-dd}_%i.log.gz">
+            <PatternLayout pattern="${layoutPattern}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10" fileIndex="min"/>
+        </RollingFile>
+    </Appenders>
+
+    <!-- 실제 Logger FATAL, ERROR, WARN, INFO, DEBUG, TRACE -->
+    <Loggers>
+        <!-- Root 로거 (다른 로거에 해당하지 않는 로그들) 콘솔과 파일에 모두 출력 -->
+        <Root level="WARN" additivity="false">
+            <AppenderRef ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </Root>
+
+         <!-- 푸시 실패 로그 -->
+        <Logger name="com.architecture.admin.services.push.PushService" level="info" additivity="false">
+            <AppenderRef ref="Push_Fail"/>
+        </Logger>
+
+        <!-- 일반 JDBC 활동에 대한 로깅 비활성화 -->
+        <logger name="jdbc" level="OFF" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+
+        <!-- JDBC 연결 세부정보에 대한 로깅 비활성화 -->
+        <logger name="jdbc.connection" level="OFF" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+
+        <!-- SQL 쿼리만을 위한 로깅 비활성화 -->
+        <logger name="jdbc.sqlonly" level="OFF" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+
+        <!-- SQL 쿼리 실행 타이밍에 대한 디버그 레벨 로깅 활성화 -->
+        <logger name="jdbc.sqltiming" level="DEBUG" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+
+        <!-- JDBC 감사 활동에 대한 로깅 비활성화 -->
+        <logger name="jdbc.audit" level="OFF" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+
+        <!-- JDBC 결과 집합 정보에 대한 로깅 비활성화 -->
+        <logger name="jdbc.resultset" level="OFF" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+
+        <!-- JDBC 결과 집합 테이블에 대한 로깅 비활성화 -->
+        <logger name="jdbc.resultsettable" level="OFF" additivity="false">
+            <appender-ref ref="Console_Appender"/>
+            <AppenderRef ref="File_Appender"/>
+        </logger>
+    </Loggers>
+</Configuration>

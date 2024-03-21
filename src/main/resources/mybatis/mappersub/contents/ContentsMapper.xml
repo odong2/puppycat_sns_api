@@ -1,0 +1,1246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.contents.ContentsDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 컨텐츠 상세 공통 컬럼 -->
+    <sql id="commonColumn">
+        `snco`.`idx`,
+        `snco`.`contents`,
+        `snco`.`uuid`,
+        `snco`.`image_cnt`,
+        `snco`.`is_comment`,
+        `snco`.`is_like`,
+        `snco`.`is_view`,
+        `snco`.`menu_idx`,
+        `snco`.`member_uuid`,
+        CONVERT_TZ(`snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+        CASE WHEN `snco`.`modi_date` IS NULL THEN 0 ELSE 1 END AS `modifyState`,
+        `snco`.`reg_date_tz`,
+        `sncome`.`name`,
+        `sncolicn`.`like_cnt`,
+        `sncococn`.`comment_cnt`,
+        IFNULL(`sncolo`.`location`, '') AS `location`,
+        IFNULL(`sncoli`.`state`, 0) AS `like_state`,
+        IFNULL(`sncosa`.`state`, 0) AS `save_state`
+    </sql>
+
+    <!-- 내가 작성한 글 공통 컬럼 -->
+    <sql id="myDetailColumn">
+        <include refid="commonColumn"/>,
+        `snco`.`is_keep` AS `keep_state`
+    </sql>
+
+    <!-- 컨텐츠 디테일 공통 컬럼 -->
+    <sql id="detailColumn">
+        <include refid="commonColumn"/>,
+        IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR(IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`,
+        IFNULL(`snmefo`.`state` , 0) AS `follow_state`
+    </sql>
+
+    <!-- 인기 컨텐츠 공통 컬럼 -->
+    <sql id="popularColumn">
+        <include refid="commonColumn"/>,
+        IFNULL(`snmefo`.`state` , 0) AS `follow_state`
+    </sql>
+
+    <!-- 컨텐츠 상세 공통 테이블 -->
+    <sql id="detailTable">
+        INNER JOIN <include refid="database"/>`sns_contents_menu` AS `sncome`
+            ON `sncome`.`idx` = `snco`.`menu_idx`
+        INNER JOIN <include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database"/>`sns_contents_location_mapping` AS `sncoloma`
+            ON `sncoloma`.`contents_idx` = `snco`.`idx`
+            AND `sncoloma`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_location` AS `sncolo`
+            ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+            AND `sncolo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN `sns_contents_save` AS `sncosa`
+            ON `sncosa`.`contents_idx` = `snco`.`idx`
+            AND `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.`contents_idx` = `snco`.`idx`
+            AND `sncohi`.`member_uuid` = #{loginMemberUuid}
+            AND `sncohi`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snco`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`member_uuid` = #{loginMemberUuid}
+            AND `sncore`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snco`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmefo2`.`follow_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.state = 1
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 유효한 컨텐츠인지 조회 -->
+    <select id="getContentsCntByIdx" parameterType="Long" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `contentsCnt`
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+                `snco`.`idx`   = #{contentsIdx}
+            AND `snco`.`state` = 1
+    </select>
+
+    <!-- 컨텐츠 is_keep 조회 -->
+    <select id="getIsKeepByIdx" parameterType="Long" resultType="_int">
+        SELECT
+            `is_keep`
+        FROM <include refid="database"/>`sns_contents`
+        WHERE
+                `idx` = #{idx}
+            AND `state` = 1
+    </select>
+
+    <!-- 내가 작성한 컨텐츠 상세 -->
+    <select id="getMyContentsDetail" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="myDetailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="database"/>`sns_contents_menu` AS `sncome`
+            ON `sncome`.`idx` = `snco`.`menu_idx`
+        INNER JOIN <include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database"/>`sns_contents_location_mapping` AS `sncoloma`
+            ON `sncoloma`.`contents_idx` = `snco`.`idx`
+            AND `sncoloma`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_location` AS `sncolo`
+            ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+            AND `sncolo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_save` AS `sncosa`
+            ON `sncosa`.`contents_idx` = `snco`.`idx`
+            AND `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state` = 1
+        WHERE
+                `snco`.`idx`         = #{contentsIdx}
+            AND `snco`.`state`       = 1
+            AND `snco`.`member_uuid` = #{loginMemberUuid}
+        <choose>
+            <when test="searchType != null and searchType == 'normal'">
+                AND `snco`.`is_keep` = 0
+            </when>
+            <when test="searchType != null and searchType == 'keep'">
+                AND `snco`.`is_keep` = 1
+            </when>
+        </choose>
+    </select>
+
+    <!-- 컨텐츠 상세 (단건) -->
+    <select id="getContentsDetail" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="detailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+            <include refid="detailTable"/>
+        WHERE
+                    `snco`.`idx`        = #{contentsIdx}
+                AND `snmebl`.`state`      IS NULL
+                AND `snmebl2`.`state`     IS NULL
+                AND `sncore`.`state`      IS NULL
+            <if test="searchType == null || searchType != 'my'">
+                AND `snco`.`is_keep`    = 0
+            </if>
+                AND `snco`.`state`      = 1
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+    </select>
+
+    <!-- 최신 컨텐츠 상세 카운트 -->
+    <select id="getTotalRecentCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`) AS `totalCnt`
+        FROM (
+            SELECT
+                IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR(IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`,
+                `snco`.`is_view`
+            FROM<include refid="database"/>`sns_contents` AS `snco`
+                 <include refid="detailTable"/>
+            WHERE
+                    `snco`.`is_keep`  = 0
+                AND `snco`.`state`    = 1
+                AND `sncohi`.`state`  IS NULL
+                AND `snmebl`.`state`  IS NULL
+                AND `snmebl2`.`state` IS NULL
+                AND `sncore`.`state`  IS NULL
+            HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+            ORDER BY `snco`.`reg_date` DESC
+        ) AS `snco`
+    </select>
+
+    <!-- 최신 컨텐츠 상세 리스트 -->
+    <select id="getRecentList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="detailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+             <include refid="detailTable"/>
+        WHERE
+                `snco`.`is_keep`      = 0
+            AND `snco`.`state`        = 1
+            AND `sncohi`.`state`	  IS NULL
+            AND `snmebl`.`state`      IS NULL
+            AND `snmebl2`.`state`     IS NULL
+            AND `sncore`.`state`      IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 회원 컨텐츠 상세 카운트 -->
+    <select id="getTotalContentsDetailCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`) AS `totalCnt`
+        FROM (
+            SELECT
+                IF(`snco`.`is_view` = 2 AND (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0), 1, 0) AS `is_follow`,
+                `snco`.`is_view`
+            FROM <include refid="database"/>`sns_contents` AS `snco`
+                 <include refid="detailTable"/>
+            WHERE
+                    `snco`.`is_keep` = 0
+                AND `snco`.`state`   = 1
+                AND `sncohi`.`state` IS NULL
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state`IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snco`.`member_uuid` = #{memberUuid}
+                HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 회원 컨텐츠 상세 리스트  -->
+    <select id="getContentsDetailList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="detailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+             <include refid="detailTable"/>
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `sncohi`.`state`	IS NULL
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+            AND `sncore`.`state`    IS NULL
+            AND `snco`.`member_uuid` = #{memberUuid}
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 급상승 인기 게시글 카운트 -->
+    <select id="getTotalHourPopularCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM <include refid="database"/> `sns_contents_hour_popular` AS `sncohopo`
+        INNER JOIN <include refid="database"/>`sns_contents` AS `snco`
+            ON `sncohopo`.`contents_idx` = `snco`.`idx`
+        <include refid="detailTable"/>
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+            AND `sncohi`.`state`	IS NULL
+            AND `sncore`.`state`    IS NULL
+    </select>
+
+    <!-- 급상승 인기 게시글 리스트 -->
+    <select id="getHourPopularList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="popularColumn"/>
+        FROM <include refid="database"/>`sns_contents_hour_popular` AS `sncohopo`
+        INNER JOIN <include refid="database"/>`sns_contents` AS `snco`
+            ON `sncohopo`.`contents_idx` = `snco`.`idx`
+        <include refid="detailTable"/>
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `sncohi`.`state`	IS NULL
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+            AND `sncore`.`state`    IS NULL
+        ORDER BY `sncohopo`.`rank` ASC
+    </select>
+
+    <!-- 인기 게시글 카운트 -->
+    <select id="getTotalWeekPopularCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM <include refid="database"/>`sns_contents_week_popular` AS `sncowepo`
+        INNER JOIN <include refid="database"/>`sns_contents` AS `snco`
+            ON `sncowepo`.`contents_idx` = `snco`.`idx`
+        <include refid="detailTable"/>
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `sncohi`.`state`	IS NULL
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+            AND `sncore`.`state`    IS NULL
+    </select>
+
+    <!-- 인기 게시글 리스트 -->
+    <select id="getWeekPopularList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="popularColumn"/>
+        FROM <include refid="database"/>`sns_contents_week_popular` AS `sncowepo`
+        INNER JOIN <include refid="database"/>`sns_contents` AS `snco`
+            ON `sncowepo`.`contents_idx` = `snco`.`idx`
+        <include refid="detailTable"/>
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `sncohi`.`state`	IS NULL
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+            AND `sncore`.`state`    IS NULL
+        ORDER BY `sncowepo`.`rank` ASC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 내가 작성한 컨텐츠 카운트 -->
+    <select id="getTotalWrittenByMeCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="database"/>`sns_contents_menu` AS `sncome`
+            ON `sncome`.`idx` = `snco`.`menu_idx`
+        INNER JOIN <include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database"/>`sns_contents_location_mapping` AS `sncoloma`
+            ON `sncoloma`.`contents_idx` = `snco`.`idx`
+            AND `sncoloma`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_location` AS `sncolo`
+            ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+            AND `sncolo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_save` AS `sncosa`
+            ON `sncosa`.`contents_idx` = `snco`.`idx`
+            AND `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state` = 1
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `snco`.`member_uuid` = #{loginMemberUuid}
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 내가 작성한 컨텐츠 리스트 -->
+    <select id="getWrittenByMeList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="myDetailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="database"/>`sns_contents_menu` AS `sncome`
+            ON `sncome`.`idx` = `snco`.`menu_idx`
+        INNER JOIN <include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database"/>`sns_contents_location_mapping` AS `sncoloma`
+            ON `sncoloma`.`contents_idx` = `snco`.`idx`
+            AND `sncoloma`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_location` AS `sncolo`
+            ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+            AND `sncolo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_save` AS `sncosa`
+            ON `sncosa`.`contents_idx` = `snco`.`idx`
+            AND `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state` = 1
+        WHERE
+                `snco`.`is_keep`    = 0
+            AND `snco`.`state`      = 1
+            AND `snco`.`member_uuid` = #{loginMemberUuid}
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 내가 저장한 컨텐츠 카운트 -->
+    <select id="getTotalSaveCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`) AS `totalCnt`
+        FROM (
+            SELECT
+                IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR(IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`,
+                `snco`.`is_view`
+            FROM<include refid="database"/>`sns_contents` AS `snco`
+                 <include refid="detailTable"/>
+            WHERE
+                    `sncosa`.`member_uuid` = #{loginMemberUuid}
+                AND `sncosa`.`state` = 1
+                AND `snco`.`is_keep` = 0
+                AND `snco`.`state` = 1
+                AND `sncohi`.`state` IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state` IS NULL
+            HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 내가 저장한 컨텐츠 리스트 -->
+    <select id="getSaveList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="detailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+             <include refid="detailTable"/>
+        WHERE
+                `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state`      = 1
+            AND	`snco`.`is_keep`      = 0
+            AND `snco`.`state`        = 1
+            AND `sncohi`.`state`    IS NULL
+            AND `sncore`.`state`    IS NULL
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 내가 `좋아요 한` 컨텐츠 카운트 -->
+    <select id="getTotalLikeCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`) AS `totalCnt`
+        FROM (
+            SELECT
+                IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR(IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`,
+                `snco`.`is_view`
+            FROM <include refid="database"/>`sns_contents` AS `snco`
+                 <include refid="detailTable"/>
+            WHERE
+                    `sncoli`.`member_uuid` = #{loginMemberUuid}
+                AND `snco`.`is_keep` = 0
+                AND `snco`.`state`   = 1
+                AND `sncoli`.`state` = 1
+                AND `sncohi`.`state` IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state` IS NULL
+            HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 내가 좋아요한 컨텐츠 리스트 -->
+    <select id="getLikeList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            <include refid="detailColumn"/>
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+             <include refid="detailTable"/>
+        WHERE
+                `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `snco`.`is_keep`      = 0
+            AND `snco`.`state`        = 1
+            AND `sncoli`.`state`      = 1
+            AND `sncohi`.`state`    IS NULL
+            AND `sncore`.`state`    IS NULL
+            AND `snmebl`.`state`    IS NULL
+            AND `snmebl2`.`state`   IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 내가 태그된 컨텐츠 카운트 -->
+    <select id="getTotalTagCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM (
+            SELECT
+                DISTINCT `snco`.`idx`,
+                         `snco`.`is_view`,
+                        IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR(IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`
+            FROM <include refid="database"/> `sns_img_member_tag_mapping` AS `snimmetama`
+            INNER JOIN <include refid="database"/>  `sns_contents` AS `snco`
+                ON `snimmetama`.`contents_idx` = `snco`.`idx`
+            <include refid="detailTable"/>
+            WHERE
+                <choose>
+                    <when test="memberUuid != null">
+                        `snimmetama`.`member_uuid` = #{memberUuid}
+                    </when>
+                    <otherwise>
+                        `snimmetama`.`member_uuid` = #{loginMemberUuid}
+                    </otherwise>
+                </choose>
+                AND `snco`.`is_keep` = 0
+                AND `snco`.`state`   = 1
+                AND `sncohi`.`state` IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state` IS NULL
+                HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 내가 태그된 컨텐츠 리스트 -->
+    <select id="getTagList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            DISTINCT <include refid="detailColumn"/>
+        FROM <include refid="database"/> `sns_img_member_tag_mapping` AS `snimmetama`
+        INNER JOIN <include refid="database"/>  `sns_contents` AS `snco`
+            ON `snimmetama`.`contents_idx` = `snco`.`idx`
+        <include refid="detailTable"/>
+        WHERE
+            <choose>
+                <when test="memberUuid != null">
+                    `snimmetama`.`member_uuid` = #{memberUuid}
+                </when>
+                <otherwise>
+                    `snimmetama`.`member_uuid` = #{loginMemberUuid}
+                </otherwise>
+            </choose>
+            AND `snco`.`is_keep`          = 0
+            AND `snco`.`state`            = 1
+            AND `sncohi`.`state`          IS NULL
+            AND `sncore`.`state`          IS NULL
+            AND `snmebl`.`state`          IS NULL
+            AND `snmebl2`.`state`         IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 해시 태그 상세 카운트 -->
+    <select id="getTotalHashTagCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM(
+            SELECT
+                DISTINCT `snco`.`idx`,
+                        `snco`.`is_view`,
+                        IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR(IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`
+        FROM <include refid="database"/>`sns_contents_hash_tag_mapping` AS `sncohatama`
+            INNER JOIN<include refid="database"/>`sns_hash_tag` AS `snhata`
+                ON `snhata`.`idx` = `sncohatama`.`hash_tag_idx` AND `snhata`.`state` = 1
+            INNER JOIN <include refid="database"/>  `sns_contents` AS `snco`
+                ON `sncohatama`.`contents_idx` = `snco`.`idx`
+            <include refid="detailTable"/>
+            WHERE
+                    `snhata`.`hash_tag`  = #{searchWord}
+                AND `sncohatama`.`state` = 1
+                AND `snco`.`is_keep`     = 0
+                AND `snco`.`state`       = 1
+                AND `sncohi`.`state`    IS NULL
+                AND `snmebl`.`state`    IS NULL
+                AND `snmebl2`.`state`   IS NULL
+                AND `sncore`.`state`    IS NULL
+                HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 해시 태그 상세 리스트 -->
+    <select id="getHashTagContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            DISTINCT <include refid="detailColumn"/>
+        FROM <include refid="database"/>`sns_contents_hash_tag_mapping` AS `sncohatama`
+        INNER JOIN<include refid="database"/>`sns_hash_tag` AS `snhata`
+            ON `snhata`.`idx` = `sncohatama`.`hash_tag_idx` AND `snhata`.`state` = 1
+        INNER JOIN <include refid="database"/>  `sns_contents` AS `snco`
+            ON `sncohatama`.`contents_idx` = `snco`.`idx`
+        <include refid="detailTable"/>
+        WHERE
+                `snhata`.`hash_tag`          = #{searchWord}
+            AND `sncohatama`.`state`         = 1
+            AND `snco`.`is_keep`             = 0
+            AND `snco`.`state`               = 1
+            AND `sncohi`.`state`             IS NULL
+            AND `snmebl`.`state`             IS NULL
+            AND `snmebl2`.`state`            IS NULL
+            AND `sncore`.`state`             IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <choose>
+            <when test="pagination != null">
+                LIMIT #{recordSize}
+                OFFSET #{pagination.limitStart}
+            </when>
+            <otherwise>
+                LIMIT #{recordSize}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 해시 태그 리스트 -->
+    <select id="getHashTagList" parameterType="List" resultType="HashTagDto">
+        SELECT
+            `sncohatama`.`contents_idx`,
+            `snhata`.`idx`,
+            `snhata`.`hash_tag`
+        FROM <include refid="database" />`sns_contents_hash_tag_mapping` AS `sncohatama`
+        INNER JOIN <include refid="database" />`sns_hash_tag` AS `snhata`
+            ON `sncohatama`.`hash_tag_idx` = `snhata`.`idx` AND `snhata`.`state` = 1
+        WHERE
+            `sncohatama`.`contents_idx` IN
+            <foreach collection="list" item="idx" open="("  separator="," close=")">
+                #{idx}
+            </foreach>
+        AND `sncohatama`.`state` = 1
+    </select>
+
+    <!-- 팔로잉 컨텐츠 카운트 가져오기 -->
+    <select id="iGetTotalFollowContentsCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `totalCnt`
+        FROM (
+            SELECT
+                DISTINCT `snco`.`idx`
+            FROM<include refid="database"/>`sns_contents` AS `snco`
+            INNER JOIN<include refid="database"/>`sns_contents_menu` AS `sncome`
+                ON `sncome`.`idx` = `snco`.`menu_idx`
+            INNER JOIN<include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+                ON `sncolicn`.`contents_idx` = `snco`.`idx`
+            INNER JOIN<include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+                ON `sncococn`.`contents_idx` = `snco`.`idx`
+            LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo`
+                ON `snco`.`member_uuid` = `snmefo`.`follow_uuid`
+                AND `snmefo`.`state` = 1
+            LEFT JOIN<include refid="database"/>`sns_contents_location_mapping` AS `sncoloma`
+                ON `sncoloma`.`contents_idx` = `snco`.`idx`
+                AND `sncoloma`.`state` = 1
+            LEFT JOIN<include refid="database"/>`sns_contents_location` AS `sncolo`
+                ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+                AND `sncolo`.`state` = 1
+            LEFT JOIN <include refid="database"/>`sns_contents_like` AS `sncoli`
+                ON `sncoli`.`contents_idx` = `snco`.`idx`
+                AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+                AND `sncoli`.`state` = 1
+            LEFT JOIN <include refid="database"/>`sns_contents_save` AS `sncosa`
+                ON `sncosa`.`contents_idx` = `snco`.`idx`
+                AND `sncosa`.`member_uuid` = #{loginMemberUuid}
+                AND `sncosa`.`state` = 1
+            LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl`
+                ON `snmebl`.`block_uuid` = `snco`.`member_uuid`
+                AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+                AND `snmebl`.`state` = 1
+            LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl2`
+                ON `snmebl2`.`member_uuid` = `snco`.`member_uuid`
+                AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+                AND `snmebl2`.`state` = 1
+            LEFT JOIN<include refid="database"/>`sns_contents_hide` AS `sncohi`
+                ON `sncohi`.`contents_idx` = `snco`.`idx`
+                AND `sncohi`.`member_uuid` = #{loginMemberUuid}
+                AND `sncohi`.`state` = 1
+            LEFT JOIN<include refid="database"/>`sns_contents_report` AS `sncore`
+                ON `sncore`.`contents_idx` = `snco`.`idx`
+                AND `sncore`.`member_uuid` = #{loginMemberUuid}
+                AND `sncore`.`state` = 1
+            WHERE
+                    `snco`.`is_keep` = 0
+                AND `snco`.`state` = 1
+                AND (
+                        `snco`.`member_uuid` = #{loginMemberUuid}
+                    OR `snmefo`.`member_uuid` = #{loginMemberUuid}
+                )
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state` IS NULL
+                AND `sncohi`.`state` IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snco`.`reg_date` <![CDATA[ >= ]]> #{date}
+        ) AS `snco`
+    </select>
+
+    <!-- 팔로잉 콘텐츠 리스트 가져오기 -->
+    <select id="lGetFollowContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            DISTINCT
+            `snco`.`idx`,
+            `snco`.`menu_idx`,
+            `snco`.`contents`,
+            `snco`.`uuid`,
+            `snco`.`image_cnt`,
+            `snco`.`is_comment`,
+            `snco`.`is_like`,
+            `snco`.`is_view`,
+            `snco`.`member_uuid`,
+            CONVERT_TZ(`snco`.`reg_date`, 'UTC', '${convertTZ}') AS `reg_date`,
+            CASE WHEN `snco`.`modi_date` IS NULL THEN 0 ELSE 1 END AS `modifyState`,
+            `snco`.`reg_date_tz`,
+            `sncome`.`name`,
+            `sncolicn`.`like_cnt`,
+            `sncococn`.`comment_cnt`,
+            IFNULL(`sncolo`.`location`, '') AS `location`,
+            IFNULL(`sncoli`.`state`, 0) AS `like_state`,
+            IFNULL(`sncosa`.`state`, 0) AS `save_state`,
+            IFNULL(`snmefo`.`state` , 0) AS `follow_state`
+        FROM <include refid="database"/>`sns_contents` AS `snco`
+        INNER JOIN <include refid="database"/>`sns_contents_menu` AS `sncome`
+            ON `sncome`.`idx` = `snco`.`menu_idx`
+        INNER JOIN <include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snco`.`member_uuid` = `snmefo`.`follow_uuid`
+            AND `snmefo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_location_mapping` AS `sncoloma`
+            ON `sncoloma`.`contents_idx` = `snco`.`idx`
+            AND `sncoloma`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_location` AS `sncolo`
+            ON `sncolo`.`idx` = `sncoloma`.`location_idx`
+            AND `sncolo`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_save` AS `sncosa`
+            ON `sncosa`.`contents_idx` = `snco`.`idx`
+            AND `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snco`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.`contents_idx` = `snco`.`idx`
+            AND `sncohi`.`member_uuid` = #{loginMemberUuid}
+            AND `sncohi`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`member_uuid` = #{loginMemberUuid}
+            AND `sncore`.`state` = 1
+        WHERE
+                `snco`.`is_keep` = 0
+            AND `snco`.`state` = 1
+            AND (
+                    `snco`.`member_uuid` = #{loginMemberUuid}
+                OR `snmefo`.`member_uuid` = #{loginMemberUuid}
+                )
+            AND `snmebl`.`state` IS NULL
+            AND `snmebl2`.`state` IS NULL
+            AND `sncohi`.`state` IS NULL
+            AND `sncore`.`state` IS NULL
+            AND `snco`.`reg_date` <![CDATA[ >= ]]> #{date}
+        ORDER BY `snco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 멘션 목록 -->
+    <select id="getMentionMemberUuid" parameterType="Long" resultType="String">
+        SELECT
+            `snmeme`.`member_uuid`
+        FROM <include refid="database" />`sns_contents_mention_mapping` AS `sncomema`
+        INNER JOIN <include refid="database" />`sns_member_mention` AS `snmeme`
+            ON `sncomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+                `sncomema`.`state` = 1
+            AND `sncomema`.`contents_idx`  = #{idx}
+    </select>
+
+    <!-- 멘션 리스트 -->
+    <select id="getMentionTagList" parameterType="List" resultType="MentionTagDto">
+        SELECT
+            `sncomema`.`contents_idx`,
+            `snmeme`.`member_uuid` AS `uuid`
+        FROM <include refid="database" />`sns_contents_mention_mapping` AS `sncomema`
+        INNER JOIN <include refid="database" />`sns_member_mention` AS `snmeme`
+            ON `sncomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+                `sncomema`.`state` = 1
+            AND `sncomema`.`contents_idx` IN
+            <foreach collection="list" item="idx" open="("  separator="," close=")">
+                #{idx}
+            </foreach>
+    </select>
+
+    <!-- 이미지 리스트 -->
+    <select id="getContentsImgList" parameterType="SearchDto" resultType="ContentsImgDto">
+        SELECT
+            `sncoim`.`contents_idx`,
+            `sncoim`.`idx`,
+            IF(`sncoim`.`url` = '','',CONCAT(#{imgDomain}, `sncoim`.`url`)) AS `url`,
+            `sncoim`.`img_width`,
+            `sncoim`.`img_height`
+        FROM <include refid="database"/>`sns_contents_img` AS `sncoim`
+        LEFT JOIN <include refid="database"/>`sns_contents_img_restrain` AS `sncoimre`
+            ON `sncoimre`.`img_idx` = `sncoim`.`idx`
+        WHERE
+                `sncoim`.`contents_idx` = #{contentsIdx}
+            AND `sncoim`.`state` = 1
+            AND `sncoimre`.`idx` IS NULL
+        ORDER BY `sncoim`.`sort` ASC
+        <if test="imgLimit != null and imgOffSet != null">
+            LIMIT #{imgLimit}
+            OFFSET #{imgOffSet}
+        </if>
+    </select>
+
+    <!-- 컨텐츠 이미지 회원 태그 리스트 -->
+    <select id="getImgMemberTagList" parameterType="SearchDto" resultType="ContentsImgMemberTagDto">
+        SELECT
+            `snimmetama`.`img_idx`,
+            `snimmetama`.`member_uuid`,
+            `snimmetama`.`width`,
+            `snimmetama`.`height`,
+            IFNULL(`snmefo`.`state`, 0) AS `follow_state`,
+            ${memberBadge}
+        FROM <include refid="database"/>`sns_img_member_tag_mapping` AS `snimmetama`
+        INNER JOIN <include refid="database"/>`sns_member_follow_cnt` AS `snmefocn`
+            ON `snimmetama`.`member_uuid` = `snmefocn`.`member_uuid`
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snimmetama`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{loginMemberUuid}
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snimmetama`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snimmetama`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        WHERE
+                `snimmetama`.`img_idx` IN
+            <foreach collection="idxList" item="idx" open="("  separator="," close=")">
+                #{idx}
+            </foreach>
+            AND `snimmetama`.`state` = 1
+            AND `snmebl`.`state`      IS NULL
+            AND `snmebl2`.`state`     IS NULL
+        ORDER BY `snimmetama`.`img_idx` ASC
+    </select>
+
+    <!-- 타인이 작성한 컨텐츠 카운트 가져오기 -->
+    <select id="iGetTotalMemberContentsCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`) AS `totalCnt`
+        FROM (
+            SELECT
+                `snco`.`is_view`,
+                IF(`snco`.`is_view` = 2 AND (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0), 1, 0) AS `is_follow`
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        INNER JOIN <include refid="database" />`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database" />`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database" />`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.idx
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`member_uuid` = #{loginMemberUuid}
+            AND `sncore`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.`member_uuid` = #{loginMemberUuid}
+            AND `sncohi`.`contents_idx` = `snco`.`idx`
+            AND `sncohi`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl1`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmebl1`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`block_uuid` = `snco`.`member_uuid`
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snco`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmefo2`.`follow_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.`state` = 1
+        WHERE
+                `snco`.`member_uuid` = #{memberUuid}
+            AND `snco`.`state` = 1
+            AND `snco`.`is_keep` = 0
+            AND `sncore`.`idx` IS NULL
+            AND `snmebl1`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            AND `sncohi`.`idx` IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 타인이 작성한 컨텐츠 리스트 가져오기 -->
+    <select id="lGetMemberContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` AS `idx`,
+            `snco`.`image_cnt`,
+            `sncolicn`.`like_cnt`,
+            `sncococn`.`comment_cnt`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `regDate`,
+            `snco`.`reg_date_tz`,
+            IFNULL(`sncoli`.`state`, 0) AS `likeState`,
+            `snco`.`is_view`,
+            IF(`snco`.`is_view` = 2 AND (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0), 1, 0) AS
+            `is_follow`
+        FROM<include refid="database"/>`sns_contents` AS `snco`
+        INNER JOIN<include refid="database"/>`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN<include refid="database"/>`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN<include refid="database"/>`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.idx
+            AND `sncoli`.`member_uuid` = #{loginMemberUuid}
+            AND `sncoli`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `snco`.`idx`
+            AND `sncore`.`member_uuid` = #{loginMemberUuid}
+            AND `sncore`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.`member_uuid` = #{loginMemberUuid}
+            AND `sncohi`.`contents_idx` = `snco`.`idx`
+            AND `sncohi`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl1`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmebl1`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`block_uuid` = `snco`.`member_uuid`
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snco`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmefo2`.`follow_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.`state` = 1
+        WHERE
+                `snco`.`member_uuid` = #{memberUuid}
+            AND `snco`.`state`   = 1
+            AND `snco`.`is_keep` = 0
+            AND `sncore`.`idx` IS NULL
+            AND `snmebl1`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+            AND `sncohi`.`idx` IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY `snco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 내가 작성한 컨텐츠 카운트 가져오기 -->
+    <select id="iGetTotalMyContentsCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`idx`)
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        INNER JOIN <include refid="database" />`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database" />`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database" />`sns_contents_like` AS `sncoli`
+            ON `sncoli`.`contents_idx` = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = `snco`.`member_uuid`
+            AND `sncoli`.`state` = 1
+        WHERE
+                `snco`.`member_uuid` = #{loginMemberUuid}
+            AND `snco`.`state`      = 1
+            AND `snco`.`is_keep`    = 0
+    </select>
+
+    <!-- 내가 작성한 콘텐츠 리스트 가져오기 -->
+    <select id="lGetMyContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `snco`.`idx` AS `idx`,
+            `snco`.`image_cnt`,
+            `sncolicn`.like_cnt,
+            `sncococn`.comment_cnt,
+            IFNULL(`sncoli`.state, 0) AS `selfLike`,
+            CONVERT_TZ( `snco`.`reg_date`, 'UTC', '${convertTZ}') AS `regDate`,
+            `snco`.`reg_date_tz`
+        FROM <include refid="database" />`sns_contents` AS `snco`
+        INNER JOIN <include refid="database" />`sns_contents_like_cnt` AS `sncolicn`
+            ON `sncolicn`.`contents_idx` = `snco`.`idx`
+        INNER JOIN <include refid="database" />`sns_contents_comment_cnt` AS `sncococn`
+            ON `sncococn`.`contents_idx` = `snco`.`idx`
+        LEFT JOIN <include refid="database" />`sns_contents_like` AS `sncoli`
+            ON `sncoli`.contents_idx = `snco`.`idx`
+            AND `sncoli`.`member_uuid` = `snco`.`member_uuid`
+            AND `sncoli`.state = 1
+        WHERE
+                 `snco`.`member_uuid` = #{loginMemberUuid}
+            AND  `snco`.`state`      = 1
+            AND  `snco`.`is_keep`    = 0
+        ORDER BY `snco`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 콘텐츠 고유 아이디 카운트 가져오기 -->
+    <select id="getCountByUuid" parameterType="String" resultType="int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+            `snco`.`uuid` = #{uuid}
+    </select>
+
+    <!-- 콘텐츠 이미지 고유 아이디 카운트 가져오기 -->
+    <select id="getCountByImgUuid" parameterType="String" resultType="int">
+        SELECT
+            COUNT(`sncoim`.`idx`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_contents_img` AS `sncoim`
+        WHERE
+            `sncoim`.`uuid` = #{uuid}
+    </select>
+
+    <!-- 컨텐츠 위치 idx 가져오기 -->
+    <select id="getIdxByLocation" parameterType="string" resultType="Long">
+        SELECT
+            `sncolo`.`idx`
+        FROM
+            <include refid="database" />`sns_contents_location` AS `sncolo`
+        WHERE
+            `sncolo`.`location` = #{location}
+    </select>
+
+    <!-- 컨텐츠 작성자IDX 가져오기 -->
+    <select id="getMemberUuidByIdx" parameterType="Long" resultType="String">
+        SELECT
+            `snco`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+            `snco`.`idx` = #{contentsIdx}
+    </select>
+
+    <!-- 내가 작성한 콘텐츠 인지 확인 -->
+    <select id="getCountByMyContentsIdx" parameterType="ContentsDto" resultType="int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+                `snco`.`idx`        = #{idx}
+            AND `snco`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 소셜/산책 콘텐츠 타입 확인 -->
+    <select id="getCountByContentsMenu" parameterType="ContentsDto" resultType="int">
+        SELECT
+            COUNT(`snco`.`idx`) AS `cnt`
+        FROM
+            <include refid="database" />`sns_contents` AS `snco`
+        WHERE
+                `snco`.`idx`        = #{idx}
+            AND `snco`.`menu_idx`   = #{menuIdx}
+    </select>
+
+    <!-- 컨텐츠에 사용 된 이미지 idx리스트 -->
+    <select id="getContentsImgIdxList" parameterType="ContentsDto" resultType="_long">
+        SELECT
+            `sncoim`.`idx`
+        FROM
+            <include refid="database" />`sns_contents_img` AS `sncoim`
+        WHERE
+                `sncoim`.`contents_idx` = #{idx}
+            AND `sncoim`.`state` = 1
+    </select>
+
+    <!-- 컨텐츠에 사용 된 이미지 idx리스트 -->
+    <select id="getContentsLocation" parameterType="ContentsDto" resultType="String">
+        SELECT
+            `sncola`.`location`
+        FROM
+            <include refid="database" />`sns_contents_location_mapping` AS `sncolama`
+        INNER JOIN  <include refid="database" />`sns_contents_location` AS `sncola`
+            ON `sncolama`.`location_idx`=`sncola`.`idx`
+        WHERE
+                `sncolama`.`contents_idx` =  #{idx}
+            AND `sncolama`.`state` = 1
+    </select>
+
+    <!-- 컨텐츠 첫번째 이미지 가져오기 -->
+    <select id="getContentsImg" parameterType="long" resultType="string">
+        SELECT
+            `sncoim`.`url`
+        FROM <include refid="database" />`sns_contents_img` AS `sncoim`
+        LEFT JOIN <include refid="database"/>`sns_contents_img_restrain` AS `sncoimre`
+            ON `sncoimre`.`img_idx` = `sncoim`.`idx`
+        WHERE
+                `sncoim`.`contents_idx` = #{contentsIdx}
+            AND `sncoim`.`state` = 1
+            AND `sncoimre`.`idx` IS NULL
+        ORDER BY `sncoim`.`sort` ASC
+        LIMIT 1
+    </select>
+
+    <!-- 컨턴츠 첫 번째 이미지-->
+    <select id="getContentsFirstImg" parameterType="Long" resultType="ContentsImgDto">
+        SELECT
+            `sncoim`.`url`,
+            `sncoim`.`contents_idx`
+        FROM <include refid="database" />`sns_contents_img` AS `sncoim`
+        LEFT JOIN <include refid="database"/>`sns_contents_img_restrain` AS `sncoimre`
+            ON `sncoimre`.`img_idx` = `sncoim`.`idx`
+        WHERE
+                `sncoim`.`contents_idx` = #{idx}
+            AND `sncoim`.`state` = 1
+            AND `sncoimre`.`idx` IS NULL
+        ORDER BY `sncoim`.`sort` ASC
+        LIMIT 1
+    </select>
+
+    <!-- 숨긴 컨텐츠인지 조회 -->
+    <select id="getContentsHideCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`idx`)
+        FROM <include refid="database"/>`sns_contents_hide`
+        WHERE
+                `contents_idx` = #{contentsIdx}
+            AND `member_uuid`  = #{loginMemberUuid}
+            AND `state` = 1
+    </select>
+
+    <!-- 신고한 컨텐츠인지 조회 -->
+    <select id="getContentsReportCnt" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`idx`)
+        FROM <include refid="database"/>`sns_contents_report`
+        WHERE
+                `member_uuid`  = #{loginMemberUuid}
+            AND `contents_idx` = #{contentsIdx}
+            AND `state` = 1
+    </select>
+
+    <!-- 컨텐츠 is_view 조회 -->
+    <select id="getIsViewByIdx" parameterType="Long" resultType="_int">
+        SELECT
+            `is_view`
+        FROM <include refid="database"/>`sns_contents`
+        WHERE
+                `idx` = #{contentsIdx}
+            AND `state` = 1
+    </select>
+
+    <!-- 컨텐츠 idx 조회 [댓글 idx로]-->
+    <select id="getContentsIdxByCommentIdx" parameterType="Long" resultType="Long">
+        SELECT
+            `snco`.`idx`
+        FROM <include refid="database"/>`sns_contents_comment` AS `sncoco`
+        INNER JOIN <include refid="database"/>`sns_contents` AS `snco`
+            ON `sncoco`.`contents_idx` = `snco`.`idx`
+        WHERE
+                `snco`.`state` = 1
+            AND `sncoco`.`idx` = #{commentIdx}
+    </select>
+
+    <!-- 컨텐츠 INFO 조회-->
+    <select id="getContentsInfo" parameterType="Long" resultType="ContentsDto">
+        SELECT
+            *
+        FROM <include refid="database"/>`sns_contents`
+        WHERE
+            `idx` = #{contentsIdx}
+        AND `state` = 1
+    </select>
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.noti.NotiDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 댓글에 멘션 된 회원 IDX  -->
+    <select id="getCommentMentionMember" parameterType="long" resultType="String">
+        SELECT
+            DISTINCT `snmeme`.`member_uuid`
+        FROM <include refid="database" />`sns_contents_comment_mention_mapping` as `sncocomema`
+        INNER JOIN `sns_member_mention` AS `snmeme`
+            ON `sncocomema`.`mention_idx` = `snmeme`.`idx`
+        WHERE
+                `sncocomema`.`comment_idx` = #{commentIdx}
+            AND `sncocomema`.`state` = 1
+    </select>
+
+    <!-- 팔로워 목록 sns_member_follow-->
+    <select id="getFollowerList" parameterType="NotiDto" resultType="String">
+        SELECT
+            `snmefo`.`member_uuid` AS `follower_uuid`
+        FROM
+            <include refid="database"/>`sns_member_follow` AS `snmefo`
+        WHERE
+                `snmefo`.`follow_uuid` = #{senderUuid}
+            AND `snmefo`.`state` = 1
+            AND `snmefo`.`reg_date` <![CDATA[ < ]]> #{regDate}
+    </select>
+
+    <!--  컨텐츠 작성자 IDX  -->
+    <select id="getContentsMember" parameterType="long" resultType="String">
+        SELECT
+            `snco`.`member_uuid`
+        FROM
+            `sns_contents` AS `snco`
+        WHERE
+            `snco`.`idx` = #{contentsIdx}
+    </select>
+
+    <!--  부모 댓글 작성자 IDX  -->
+    <select id="getParentCommentMember" parameterType="long" resultType="String">
+        SELECT
+            `sncoco`.`member_uuid`
+        FROM
+            <include refid="database" />`sns_contents_comment` as `sncoco`
+        WHERE
+            `sncoco`.`idx` = #{commentIdx}
+    </select>
+    <!-- ==============================================================
+        UPDATE
+    =============================================================== -->
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+</mapper>

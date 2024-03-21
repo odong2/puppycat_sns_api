@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.comment.CommentLikeDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 검색 조건 -->
+    <sql id="likeSearch">
+        <where>
+                `sncocoli`.`comment_idx` = #{commentIdx}
+            AND `sncocoli`.`state`        = 1
+            AND `snmebl`.`idx` IS NULL
+            AND `snmebl2`.`idx` IS NULL
+        </where>
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+
+    <!-- 전체 카운트 가져오기 -->
+    <select id="iGetTotalLikeCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`sncocoli`.`idx`)
+        FROM
+            <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `sncocoli`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `sncocoli`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{memberUuid}
+            AND `snmebl2`.`state` = 1
+        <include refid="likeSearch"/>
+    </select>
+
+    <!-- 좋아요한 회원 리스트 가져오기 -->
+    <select id="lGetCommentLikeList" parameterType="SearchDto" resultType="MemberInfoDto">
+        SELECT
+            `sncocoli`.`member_uuid` AS `uuid`,
+            (CASE WHEN `snmefo`.`follow_uuid` = `sncocoli`.`member_uuid` THEN 1 ELSE 0 END) AS `followState`,
+            ${memberBadge}
+        FROM
+            <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+        INNER JOIN <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+            ON `snmefocn`.`member_uuid` = `sncocoli`.`member_uuid`
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `sncocoli`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `sncocoli`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{memberUuid}
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `sncocoli`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = 1
+        <include refid="likeSearch"/>
+        ORDER BY  `sncocoli`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+    <!-- 좋아요 내역 가져오기 -->
+    <select id="oGetTargetInfo" parameterType="CommentLikeDto" resultType="CommentLikeDto">
+        SELECT
+            `sncocoli`.`idx`,
+            `sncocoli`.`state`
+        FROM
+            <include refid="database" />`sns_contents_comment_like` AS `sncocoli`
+        WHERE
+                `sncocoli`.`comment_idx`   = #{commentIdx}
+            AND `sncocoli`.`member_uuid`   = #{memberUuid}
+        LIMIT 1
+    </select>
+
+    <!-- 해당 컨텐츠 cnt 테이블에 값이 있는지 확인 -->
+    <select id="lCheckCntByIdx" parameterType="CommentLikeDto" resultType="Long">
+        SELECT
+            `sncocolicn`.`comment_idx`
+        FROM
+            <include refid="database" />`sns_contents_comment_like_cnt` AS `sncocolicn`
+        WHERE
+            `sncocolicn`.`comment_idx`  = #{commentIdx}
+        LIMIT 1
+    </select>
+
+    <!-- 해당 컨텐츠 cnt 테이블에 값이 있는지 확인 -->
+    <select id="getCommentInfo" parameterType="CommentLikeDto" resultType="CommentLikeDto">
+        SELECT
+            `sncoco`.`member_uuid` AS 'receiverUuid',
+            `sncoco`.`contents`,
+            `sncoco`.`contents_idx`
+        FROM
+            <include refid="database" />`sns_contents_comment` AS `sncoco`
+        WHERE
+            `sncoco`.`idx` = #{commentIdx}
+    </select>
+
+
+</mapper>

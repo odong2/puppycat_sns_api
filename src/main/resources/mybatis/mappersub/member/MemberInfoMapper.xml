@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.member.MemberInfoDaoSub">
+    <!-- ==============================================================
+        SETTING
+    =============================================================== -->
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- 공통으로 사용할 field -->
+    <sql id="memberColumns">
+
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 해당 회원 정보 가져오기 -->
+    <select id="getMemberInfo" parameterType="memberDto" resultType="MemberInfoDto">
+        SELECT
+            `snmefocn`.`member_uuid` AS `uuid`,
+            `snmefocn`.follow_cnt,
+            `snmefocn`.follower_cnt,
+            ${memberBadge},
+            IFNULL(`snmebl`.`state`, 0) AS `blockedMeState`,
+            IFNULL(`snmebl1`.`state`, 0) AS `blockedState`,
+            IFNULL(`snmefo`.`state`, 0) AS `followState`
+        FROM <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`member_uuid` = #{uuid}
+            AND `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`member_uuid` = #{memberUuid}
+            AND `snmebl1`.`block_uuid` = #{uuid}
+            AND `snmebl1`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`member_uuid` = #{uuid}
+            AND `snmefo`.`follow_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = 1
+        WHERE
+            `snmefocn`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 해당 회원 정보 가져오기 -->
+    <select id="getSocialMemberInfo" parameterType="memberDto" resultType="MemberInfoDto">
+        SELECT
+            `snmefocn`.follow_cnt,
+            `snmefocn`.follower_cnt,
+            ${memberBadge},
+            IFNULL(`snmebl`.`state`, 0) AS `blockedMeState`,
+            IFNULL(`snmebl1`.`state`, 0) AS `blockedState`,
+            IFNULL(`snmefo`.`state`, 0) AS `followState`
+        FROM <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl`
+            ON `snmebl`.`member_uuid` = #{uuid}
+            AND `snmebl`.`block_uuid` = #{memberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_block` AS `snmebl1`
+            ON `snmebl1`.`member_uuid` = #{memberUuid}
+            AND `snmebl1`.`block_uuid` = #{uuid}
+            AND `snmebl1`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`member_uuid` = #{uuid}
+            AND `snmefo`.`follow_uuid` = #{memberUuid}
+            AND `snmefo`.`state` = 1
+        WHERE
+            `snmefocn`.`member_uuid` = #{memberUuid}
+    </select>
+
+    <!-- 작성자 팔로우 정보 -->
+    <select id="getMemberFollowInfoByUuidList" parameterType="List" resultType="MemberInfoDto">
+        SELECT
+            `snmefocn`.`member_uuid` AS `uuid`,
+            `snmefocn`.follow_cnt,
+            `snmefocn`.follower_cnt,
+            ${memberBadge}
+        FROM <include refid="database" />`sns_member_follow_cnt` AS `snmefocn`
+        WHERE
+            `snmefocn`.`member_uuid` IN
+            <foreach collection="list" item="uuid" open="("  separator="," close=")">
+                #{uuid}
+            </foreach>
+    </select>
+
+</mapper>

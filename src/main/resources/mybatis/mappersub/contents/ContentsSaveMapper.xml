@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.daosub.contents.ContentsSaveDaoSub">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <sql id="listTable">
+        INNER JOIN <include refid="database" />`sns_contents` AS `snco`
+            ON `snco`.`idx` = `sncosa`.`contents_idx`
+            AND `snco`.`state` = 1
+            AND `snco`.`is_keep` = 0
+        LEFT JOIN <include refid="database" />`sns_contents_report` AS `sncore`
+            ON `sncore`.`contents_idx` = `sncosa`.`contents_idx`
+            AND `sncore`.`member_uuid` = `sncosa`.`member_uuid`
+            AND `sncore`.`state` = 1
+        LEFT JOIN <include refid="database"/>`sns_member_block` AS `snmebl`
+            ON `snmebl`.`block_uuid` = `snco`.`member_uuid`
+            AND `snmebl`.`member_uuid` = #{loginMemberUuid}
+            AND `snmebl`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_block` AS `snmebl2`
+            ON `snmebl2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmebl2`.`block_uuid` = #{loginMemberUuid}
+            AND `snmebl2`.`state` = 1
+        LEFT JOIN <include refid="database" />`sns_contents_hide` AS `sncohi`
+            ON `sncohi`.`member_uuid` = `sncosa`.`member_uuid`
+            AND `sncohi`.`contents_idx` = `sncosa`.`contents_idx`
+            AND `sncohi`.state = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo`
+            ON `snmefo`.`follow_uuid` = `snco`.`member_uuid`
+            AND `snmefo`.`member_uuid` = #{loginMemberUuid}
+            AND `snmefo`.`state` = 1
+        LEFT JOIN<include refid="database"/>`sns_member_follow` AS `snmefo2`
+            ON `snmefo2`.`member_uuid` = `snco`.`member_uuid`
+            AND `snmefo2`.`follow_uuid` = #{loginMemberUuid}
+            AND `snmefo2`.state = 1
+    </sql>
+
+    <!-- ==============================================================
+        SELECT
+    =============================================================== -->
+    <!-- 저장 내역 가져오기 -->
+    <select id="oGetTargetInfo" parameterType="ContentsSaveDto" resultType="ContentsSaveDto">
+        SELECT
+            `sncosa`.`idx`,
+            `sncosa`.`state`
+        FROM <include refid="database" />`sns_contents_save` AS `sncosa`
+        WHERE
+                `sncosa`.`contents_idx`  = #{contentsIdx}
+            AND `sncosa`.`member_uuid`   = #{memberUuid}
+        LIMIT 1
+    </select>
+
+    <!-- 해당 컨텐츠 cnt 테이블에 값이 있는지 확인 -->
+    <select id="lCheckCntByIdx" parameterType="ContentsSaveDto" resultType="Long">
+        SELECT
+            `sncosacn`.`contents_idx`
+        FROM <include refid="database" />`sns_contents_save_cnt` AS `sncosacn`
+        WHERE
+            `sncosacn`.`contents_idx`  = #{contentsIdx}
+        LIMIT 1
+    </select>
+
+    <!-- 내가 저장한 콘텐츠 카운트 가져오기 -->
+    <select id="iGetTotalMySaveContentsCount" parameterType="SearchDto" resultType="_int">
+        SELECT
+            COUNT(`snco`.`is_view`) AS `totalCnt`
+        FROM (
+            SELECT
+                IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`,
+                `snco`.`is_view`
+            FROM <include refid="database"/>`sns_contents_save` AS `sncosa`
+                 <include refid="listTable"/>
+            WHERE
+                    `sncosa`.`member_uuid` = #{loginMemberUuid}
+                AND `sncosa`.`state`      = 1
+                AND `sncohi`.`state` IS NULL
+                AND `sncore`.`state` IS NULL
+                AND `snmebl`.`state` IS NULL
+                AND `snmebl2`.`state` IS NULL
+            HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ) AS `snco`
+    </select>
+
+    <!-- 내가 저장 한 콘텐츠 리스트 가져오기 -->
+    <select id="lGetMySaveContentsList" parameterType="SearchDto" resultType="ContentsDto">
+        SELECT
+            `sncosa`.`contents_idx` AS `idx`,
+            `snco`.`image_cnt`,
+            `snco`.`is_view`,
+            IF(`snco`.`is_view` = 2 AND (`snco`.`member_uuid` = #{loginMemberUuid} OR (IFNULL(`snmefo`.`idx`, 0) != 0 OR IFNULL(`snmefo2`.`idx`, 0) != 0)), 1, 0) AS `is_follow`
+        FROM <include refid="database"/>`sns_contents_save` AS `sncosa`
+             <include refid="listTable"/>
+        WHERE
+                `sncosa`.`member_uuid` = #{loginMemberUuid}
+            AND `sncosa`.`state`      = 1
+            AND `sncohi`.`state` IS NULL
+            AND `sncore`.`state` IS NULL
+            AND `snmebl`.`state` IS NULL
+            AND `snmebl2`.`state` IS NULL
+        HAVING (`snco`.`is_view` = 2 AND `is_follow` = 1) OR (`snco`.`is_view` = 1)
+        ORDER BY  `sncosa`.`reg_date` DESC
+        <if test="pagination != null">
+            LIMIT #{recordSize}
+            OFFSET #{pagination.limitStart}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.architecture.admin.models.dao.contents.ContentsDao">
+    <!-- database name -->
+    <sql id="database">${databaseRefId}</sql>
+
+    <!-- ==============================================================
+       SELECT
+    =============================================================== -->
+
+
+    <!-- ==============================================================
+        INSERT
+    =============================================================== -->
+    <!-- 컨텐츠 insert -->
+    <insert id="insert" parameterType="ContentsDto" useGeneratedKeys="true" keyProperty="insertedIdx">
+        INSERT INTO <include refid="database" />`sns_contents`
+        <set>
+            `uuid`          = #{uuid},
+            `member_uuid`    = #{memberUuid},
+            `menu_idx`      = #{menuIdx},
+            `contents`      = #{contents},
+            `image_cnt`     = #{imageCnt},
+            `state`         = 1,
+            `is_comment`    = 1,
+            `is_like`       = 1,
+            `is_view`       = #{isView},
+            `is_keep`       = #{isKeep},
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- 컨텐츠 이미지 insert -->
+    <insert id="insertImg" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="imgIdx">
+        INSERT INTO <include refid="database" />`sns_contents_img`
+        (
+            `uuid`,
+            `contents_idx`,
+            `url`,
+            `upload_name`,
+            `upload_path`,
+            `img_width`,
+            `img_height`,
+            `sort`,
+            `state`,
+            `reg_date`,
+            `reg_date_tz`
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+        (
+            #{item.uuid},
+            #{item.idx},
+            #{item.fileUrl},
+            #{item.orgFileName},
+            #{item.path},
+            #{item.imgWidth},
+            #{item.imgHeight},
+            #{item.sort},
+            1,
+            #{item.regDate},
+            '${convertTZ}'
+        )
+        </foreach>
+    </insert>
+
+    <!-- 이미지 내 회원 태그 insert -->
+    <insert id="insertImgTag" parameterType="java.util.List">
+        INSERT INTO <include refid="database" />`sns_img_member_tag_mapping`
+        (
+            `contents_idx`,
+            `img_idx`,
+            `member_uuid`,
+            `width`,
+            `height`,
+            `state`,
+            `reg_date`,
+            `reg_date_tz`
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+        (
+            #{item.contentsIdx},
+            #{item.imgIdx},
+            #{item.memberUuid},
+            #{item.width},
+            #{item.height},
+            1,
+            #{item.regDate},
+            '${convertTZ}'
+        )
+        </foreach>
+    </insert>
+
+    <!-- 위치정보 등록 insert -->
+    <insert id="insertLocation" parameterType="ContentsDto" useGeneratedKeys="true" keyProperty="locationIdx">
+        INSERT INTO <include refid="database" />`sns_contents_location`
+        <set>
+            `location`  = #{location},
+            `state`     = 1
+        </set>
+    </insert>
+
+    <!-- 위치정보 매핑 등록 insert -->
+    <insert id="insertLocationMapping" parameterType="ContentsDto">
+        INSERT INTO <include refid="database" />`sns_contents_location_mapping`
+        <set>
+            `contents_idx`  = #{insertedIdx},
+            `location_idx`  = #{locationIdx},
+            `state`         = 1,
+            `reg_date`      = #{regDate},
+            `reg_date_tz`   = '${convertTZ}'
+        </set>
+    </insert>
+
+    <!-- ==============================================================
+         UPDATE
+    =============================================================== -->
+    <!-- 컨텐츠 내용 업데이트 -->
+    <update id="updateContentsContents" parameterType="ContentsDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents`
+        SET
+            `contents`  = #{contents}
+        <if test="modiDate != null and modiDate != ''">
+            ,`is_view`      = #{isView}
+            ,`is_keep`      = #{isKeep}
+            ,`modi_date`    = #{modiDate}
+            ,`modi_date_tz` = '${convertTZ}'
+        </if>
+        WHERE
+            `idx`       = #{idx}
+    </update>
+
+    <!-- 이미지 내 회원 태그 수정 -->
+    <update id="modifyImgTag" parameterType="java.util.List" keyProperty="affectedRow">
+        <foreach collection="list" item="item" separator=",">
+        UPDATE <include refid="database"/>`sns_img_member_tag_mapping`
+        SET
+            `width` = #{item.width}
+            ,`height` = #{item.height}
+        WHERE
+                `member_uuid` = #{item.memberUuid}
+            AND `contents_idx` = #{item.contentsIdx}
+            AND `img_idx` = #{item.imgIdx}
+            AND `state` = 1
+        </foreach>
+    </update>
+
+    <!-- ==============================================================
+        DELETE
+    =============================================================== -->
+    <!-- 컨텐츠 삭제 -->
+    <update id="delete" parameterType="ContentsDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents`
+        SET
+            `state`  = 0
+        WHERE
+            `idx`    = #{idx}
+    </update>
+
+    <!-- 컨텐츠 위치 정보 삭제 -->
+    <update id="deleteLocation" parameterType="ContentsDto" keyProperty="affectedRow">
+        UPDATE
+            <include refid="database" />`sns_contents_location_mapping`
+        SET
+            `state`  = 0
+        WHERE
+            `contents_idx`    = #{idx}
+    </update>
+
+    <!-- 이미지 내 회원 태그 삭제 -->
+    <update id="deleteImgTag" parameterType="java.util.List" keyProperty="affectedRow">
+        <foreach collection="list" item="item" separator=",">
+            UPDATE
+                <include refid="database"/>`sns_img_member_tag_mapping`
+            SET
+                `state`  = 0
+            WHERE
+                    `member_uuid` = #{item.memberUuid}
+                AND `contents_idx` = #{item.contentsIdx}
+                AND `img_idx` = #{item.imgIdx}
+                AND `state` = 1
+        </foreach>
+    </update>
+</mapper>

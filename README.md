@@ -31,3 +31,9 @@
   
 - SNS
 <p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>
+
+## Result
+<p>
+  <img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
+  <img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
+</p>

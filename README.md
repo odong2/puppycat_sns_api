@@ -1,6 +1,6 @@
 # puppycat 프로젝트
 <p align="center">
-  <img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/59ffbf5b-8d9c-40ed-9882-536a1d50524d">
+  <img width="600" height="400" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/59ffbf5b-8d9c-40ed-9882-536a1d50524d">
 </p>
 
 ## 🤷Service Introduce

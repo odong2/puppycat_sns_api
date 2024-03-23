@@ -16,3 +16,7 @@
 
 ## 소셜 흐름도
 <a href="https://drive.google.com/file/d/1ARUIqg2dMGIQIYLuVIUAi7VD9UGFkmRC/view?usp=sharing">소셜 흐름도 보기</a>
+
+## ERD
+SNS
+<p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>

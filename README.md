@@ -1,5 +1,5 @@
 # puppycat 프로젝트
-<img width="500" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/59ffbf5b-8d9c-40ed-9882-536a1d50524d">
+<img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/59ffbf5b-8d9c-40ed-9882-536a1d50524d">
 
 ## 🤷Service Introduce
 <h3> 퍼피캣은 SHOP(쇼핑), HUB(제휴사), SNS(커뮤니티), CARE(원격상담), MAP(검색 예약) 등 MSA를 기반으로 하는 앱 플랫폼</h5>

@@ -5,11 +5,11 @@
 ><h6>SNS 애플리케이션은 사용자들이 소통하고 정보를 공유할 수 있는 환경을 제공함으로써, 사용자들 간의 상호작용을 촉진시킵니다.</h6>
 
 ****
-### 기술 스택
+## 기술 스택
 <img width="500" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/ec8ecab5-6590-4790-8e72-b4fcbc8c4e58">
 
 ****
-### 시스템 구성도
+## 시스템 구성도
 
 <p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9c0805b5-b05c-4b00-8ed4-daf19d817a34"></p>
 <p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/99bd66ba-d761-41df-a7b1-cb981e960cae"></p>

@@ -14,11 +14,11 @@
 
 ****
 
-## 기술 스택
+## 🔨기술 스택
 <img width="500" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/ec8ecab5-6590-4790-8e72-b4fcbc8c4e58">
 
 ****
-## Result
+## 💡Result
 <p align="center">
   <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/f88267b0-4efb-4679-8d1b-072aca1dd212">
   <img width="300" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/c4b706e5-996b-427f-a92d-c1d99005cee8">
@@ -46,18 +46,18 @@
 </p>
 
 ****
-## 시스템 구성도
+## 🔦시스템 구성도
 
 <p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9c0805b5-b05c-4b00-8ed4-daf19d817a34"></p>
 <p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/99bd66ba-d761-41df-a7b1-cb981e960cae"></p>
 
 ****
-## 소셜 흐름도
+## 📪소셜 흐름도
 <a href="https://drive.google.com/file/d/1ARUIqg2dMGIQIYLuVIUAi7VD9UGFkmRC/view?usp=sharing">소셜 흐름도 보기</a>
 <p><img width="1000" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/63b4744d-4cdc-4b68-9d57-897af9cef630"></p>
 
 ****
-## ERD
+## 📂ERD
 - Member </br>
   <a href="https://dbdiagram.io/d/puppycat-%ED%9A%8C%EC%9B%90-65fafd8eae072629ce866143">회원 DB</a>
   

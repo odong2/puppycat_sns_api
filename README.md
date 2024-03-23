@@ -38,4 +38,6 @@
 <p align="center">
   <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/f88267b0-4efb-4679-8d1b-072aca1dd212">
   <img width="300" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/c4b706e5-996b-427f-a92d-c1d99005cee8">
+  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/7b2ade39-5651-414b-a61c-2dbad390afeb">
+  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/f3750af7-8200-43d5-b043-41dd6d55d505">
 </p>

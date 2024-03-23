@@ -21,5 +21,5 @@
 - SNS
 <p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>
 
-- Member
-<a href="https://dbdiagram.io/d/puppycat-%ED%9A%8C%EC%9B%90-65fafd8eae072629ce866143">회원 DB</a>
+- Member </br>
+  <a href="https://dbdiagram.io/d/puppycat-%ED%9A%8C%EC%9B%90-65fafd8eae072629ce866143">회원 DB</a>

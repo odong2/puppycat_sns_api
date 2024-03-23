@@ -48,12 +48,12 @@
 <p align="center" style="margin-top:20px;">
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/603a3881-2608-40ed-b561-f13077fa5dea">
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/c2d62ae8-d7dc-48aa-b2ed-4e34dac65caf">
-  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/51b2a316-fa09-48d0-a36c-33cd6f297cd0">
+  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/22a1fbb1-f21a-4ac2-95c8-5b47a83e8b9d">
 </p>
 <p align="center" style="margin-top:20px;">
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/00f12058-2ba7-4832-90ae-24e44f70b654">
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/780e3cfe-95ea-4c5a-9da2-3db35d3dd536">
-  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/1282a6b6-ac2e-410c-b00d-3b0d6c3b4dcd">
+  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/367adcdb-85ee-4081-8299-7e19374963e4">
 </p>
 
 

@@ -34,6 +34,6 @@
 
 ## Result
 <p>
-  <img width="300" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
-  <img width="300" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
+  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
+  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
 </p>

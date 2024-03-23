@@ -12,28 +12,12 @@
   <li></li>
 </ul>
 
-
 ****
+
 ## 기술 스택
 <img width="500" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/ec8ecab5-6590-4790-8e72-b4fcbc8c4e58">
 
 ****
-## 시스템 구성도
-
-<p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9c0805b5-b05c-4b00-8ed4-daf19d817a34"></p>
-<p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/99bd66ba-d761-41df-a7b1-cb981e960cae"></p>
-
-## 소셜 흐름도
-<a href="https://drive.google.com/file/d/1ARUIqg2dMGIQIYLuVIUAi7VD9UGFkmRC/view?usp=sharing">소셜 흐름도 보기</a>
-<p><img width="1000" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/63b4744d-4cdc-4b68-9d57-897af9cef630"></p>
-
-## ERD
-- Member </br>
-  <a href="https://dbdiagram.io/d/puppycat-%ED%9A%8C%EC%9B%90-65fafd8eae072629ce866143">회원 DB</a>
-  
-- SNS
-<p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>
-
 ## Result
 <p align="center">
   <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/f88267b0-4efb-4679-8d1b-072aca1dd212">
@@ -60,4 +44,23 @@
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/5fea7572-d0d2-4116-9281-207d5b5350bd">
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9682af45-5f4d-4948-a293-046695133449">
 </p>
+
+****
+## 시스템 구성도
+
+<p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9c0805b5-b05c-4b00-8ed4-daf19d817a34"></p>
+<p><img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/99bd66ba-d761-41df-a7b1-cb981e960cae"></p>
+
+****
+## 소셜 흐름도
+<a href="https://drive.google.com/file/d/1ARUIqg2dMGIQIYLuVIUAi7VD9UGFkmRC/view?usp=sharing">소셜 흐름도 보기</a>
+<p><img width="1000" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/63b4744d-4cdc-4b68-9d57-897af9cef630"></p>
+
+****
+## ERD
+- Member </br>
+  <a href="https://dbdiagram.io/d/puppycat-%ED%9A%8C%EC%9B%90-65fafd8eae072629ce866143">회원 DB</a>
+  
+- SNS
+<p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>
 

@@ -2,7 +2,7 @@
 <img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/59ffbf5b-8d9c-40ed-9882-536a1d50524d">
 
 ## 🤷Service Introduce
-<h3> 퍼피캣은 SHOP(쇼핑), HUB(제휴사), SNS(커뮤니티), CARE(원격상담), MAP(검색 예약) 등 MSA를 기반으로 하는 앱 플랫폼</h5>
+<h4> 퍼피캣은 SHOP(쇼핑), HUB(제휴사), SNS(커뮤니티), CARE(원격상담), MAP(검색 예약) 등 MSA를 기반으로 하는 앱 플랫폼</h5>
 <ul>
   <li>하나의 플랫폼 가입을 통해 다양한 플랫폼의 경험</li>
   <li>sns는 사용자들이 소통하고 정보를 공유할 수 있는 환경을 제공하고, 사용자들 간의 상호작용을 촉진시키는 플랫폼</li>

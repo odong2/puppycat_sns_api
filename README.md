@@ -19,8 +19,8 @@
 <p><img width="1000" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/63b4744d-4cdc-4b68-9d57-897af9cef630"></p>
 
 ## ERD
-- SNS
-<p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>
-
 - Member </br>
   <a href="https://dbdiagram.io/d/puppycat-%ED%9A%8C%EC%9B%90-65fafd8eae072629ce866143">회원 DB</a>
+  
+- SNS
+<p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>

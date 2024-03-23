@@ -56,8 +56,8 @@
   <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/367adcdb-85ee-4081-8299-7e19374963e4">
 </p>
 <p align="center" style="margin-top:20px;">
-  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/fea867b1-5b9e-42e8-ac50-13c1a514ff9b">
-  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/c4f55c1a-efd6-490f-920d-c03d6e93a35a">
-  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9df50e04-283b-45cb-84fb-01ae5aa953ae">
+  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/56433ab5-3f32-4fd6-af0d-9c31459068d5">
+  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/5fea7572-d0d2-4116-9281-207d5b5350bd">
+  <img width="250" height="650" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/9682af45-5f4d-4948-a293-046695133449">
 </p>
 

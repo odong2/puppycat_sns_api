@@ -36,6 +36,6 @@
 
 ## Result
 <p align="center">
-  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
-  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/c4b706e5-996b-427f-a92d-c1d99005cee8">
+  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/f88267b0-4efb-4679-8d1b-072aca1dd212">
+  <img width="300" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/c4b706e5-996b-427f-a92d-c1d99005cee8">
 </p>

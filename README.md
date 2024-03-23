@@ -2,6 +2,7 @@
 <p align="center">
   <img width="700" height="500" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/59ffbf5b-8d9c-40ed-9882-536a1d50524d">
 </p>
+
 ## 🤷Service Introduce
 <h4> 퍼피캣은 SHOP(쇼핑), HUB(제휴사), SNS(커뮤니티), CARE(원격상담), MAP(검색 예약) 등 MSA를 기반으로 하는 앱 플랫폼</h5>
 <ul>
@@ -34,7 +35,7 @@
 <p><img width="700" height="1000" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/73e966a1-3e8d-4cf4-a7ee-325fc1ab4670"></p>
 
 ## Result
-<p>
+<p align="center">
   <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
-  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/cd8adbad-e90b-4930-8876-0e2456d00e0b">
+  <img width="250" height="600" alt="image" src="https://github.com/odong2/puppycat_sns_api/assets/95892601/624b8ad5-dd27-4f22-86c7-c09d98b4487a">
 </p>
